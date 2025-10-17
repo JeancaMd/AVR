@@ -1,0 +1,48 @@
+import pygame
+
+pygame.init()
+
+
+
+class Window:
+    ##-- Constantes
+    RESOLUTION = (800,700)
+    FONT_SIZE_X = int(RESOLUTION[0]/32) ##Factor para escalar fuente
+    BUTTON_X = RESOLUTION[0]/5333 ##Factor para escalar boton
+
+    ##-- Recursos
+    icon = pygame.image.load("assets/images/ui/logo.png")
+    menu_background = pygame.image.load("assets/images/backgrounds/menu_background.png")
+    menu_image = pygame.transform.scale(menu_background, RESOLUTION)
+    menu_button = pygame.image.load("assets/images/ui/menu_button.png")
+    font = pygame.font.SysFont("High tower text", FONT_SIZE_X)
+    
+    def __init__(self):
+        self.screen = pygame.display.set_mode((self.__class__.RESOLUTION))
+        pygame.display.set_caption("Avatars VS Rooks")  
+        pygame.display.set_icon(self.__class__.icon)
+        self.running = True
+        self.next_window = None 
+
+    def cambiar_ventana(self, ventana_clase):
+        self.next_window = ventana_clase
+        self.running = False
+
+    def handle_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+
+    def render(self):
+        pygame.display.flip()
+
+    def run(self):
+        while self.running:
+            self.handle_events()
+            self.render()
+        
+        if self.next_window:
+            nueva_ventana = self.next_window()
+            nueva_ventana.run()
+
+
