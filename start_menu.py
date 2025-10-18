@@ -48,7 +48,6 @@ class MainMenu(Window):
     def render(self):
         self.screen.blit(self.menu_image, (0, 0))
 
-        ##-- Dibujar botones
         if self.start_button.draw():
             print("INICIAR")
         if self.options_button.draw():
@@ -56,7 +55,6 @@ class MainMenu(Window):
         if self.exit_button.draw():
             self.running = False
 
-        ##-- Dibujar textos
         self.screen.blit(self.label_start, self.start_rect)
         self.screen.blit(self.label_options, self.options_rect)
         self.screen.blit(self.label_exit, self.exit_rect)

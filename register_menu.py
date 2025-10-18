@@ -40,21 +40,23 @@ class MenuRegistro(Window):
                     self.running = False
                     self.next_window = None
 
-                ##-- Verificar si se hace click en el boton de aceptar
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     if self.accept_button.rect.collidepoint(event.pos):
                         from start_menu import MainMenu
-                        ##-- Guarda los datos de los textbox para pasarlos al database.py y verificarlos
+
+                        ## Obtener valores ingresados en los textbox
+                        ## Se mandan a database.py para verificarlos
                         self.username_text = self.username_input.get_text()
                         self.email_text = self.email_input.get_text()
                         self.password_text = self.password_input.get_text()
 
+                        ## Verifica que los datos sean válidos antes de enviarlos a database.py
+                        ## Si la verificación es correcta, cambia de ventana
                         if self.verificar_datos(self.username_text, self.email_text, self.password_text):
                             self.cambiar_ventana(MainMenu)
 
                 self.manager.process_events(event)
 
-    ##-- Ventana para mostrar error al registrar
     def mostrar_error(self, mensaje_error):
         pygame_gui.windows.UIMessageWindow(
             rect=pygame.Rect((150, 220), (500, 150)),
@@ -63,10 +65,11 @@ class MenuRegistro(Window):
             window_title="Error"
         )
 
-    ##-- Si los datos son válidos, se verifica el usuario en database.py
     def verificar_datos(self, username, email, password):
         from database import GrupoCajetaDB
 
+        ## Validaciones básicas para garantizar un formato válido
+        ## antes de consultar a la base de datos
         if not username or not email or not password:
             self.mostrar_error('Debe ingresar todos los datos')
             return False
@@ -79,7 +82,7 @@ class MenuRegistro(Window):
         
         db = GrupoCajetaDB()
         try: 
-            if not db.conectar(): ##Verifica si se conectó
+            if not db.conectar():
                 self.mostrar_error('Error de conexión a la base de datos')
                 return False
             if db.verificar_usuario(username, email, password):
@@ -119,10 +122,6 @@ class MenuRegistro(Window):
             nueva_ventana = self.next_window()
             nueva_ventana.run()
     
-
-if __name__ == "__main__":
-    login = MenuRegistro()
-    login.run()
 
 
 

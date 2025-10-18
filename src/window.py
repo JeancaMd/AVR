@@ -7,8 +7,8 @@ pygame.init()
 class Window:
     ##-- Constantes
     RESOLUTION = (800,700)
-    FONT_SIZE_X = int(RESOLUTION[0]/32) ##Factor para escalar fuente
-    BUTTON_X = RESOLUTION[0]/5333 ##Factor para escalar boton
+    FONT_SIZE_X = int(RESOLUTION[0]/32) ##Factor para mantener la fuente dentro del área del botón
+    BUTTON_X = RESOLUTION[0]/5333 ##Factor para mantener las proporciones del botón sin importar la resolución
 
     ##-- Recursos
     icon = pygame.image.load("assets/images/ui/logo.png")

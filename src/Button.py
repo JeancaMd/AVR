@@ -12,10 +12,9 @@ class Button():
     
     def draw(self):
         action = False
-        ## Posición del mouse
         pos = pygame.mouse.get_pos()
 
-        ## Verificar colisión y click
+        ## Evita múltiples clicks - Activa una vez por click
         if self.rect.collidepoint(pos):
             if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False:
                 self.clicked = True
