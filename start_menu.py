@@ -23,6 +23,7 @@ class MainMenu(Window):
         self.label_start = self.font.render("Iniciar Juego", True, (206, 143, 31))
         self.start_rect = self.label_start.get_rect(center=self.start_button.rect.center)
 
+
         ##-- Botón Opciones
         self.options_button = Button.Button(
             center_x, 
