@@ -2,6 +2,7 @@ import pygame
 from src import Button
 from register_menu import MenuRegistro
 from src.window import Window
+from login_menu import LoginMenu
 
 pygame.init()
 
@@ -27,7 +28,7 @@ class Main(Window):
             if self.login_btn.draw():
                 print("Iniciar Sesión")
                 self.running = False
-                ##PONER LOGICA PARA PASAR A VENTANA DE INICIO DE SESION
+                self.cambiar_ventana(LoginMenu)
             if self.register_btn.draw():
                 print("Registrar")
                 self.running = False

@@ -54,9 +54,25 @@ class GrupoCajetaDB:
         except pyodbc.Error as e:
             print("Error al verificar usuario:", e)
             return False
-
-
-    # def delete(self):
+        
+    def verificar_usuario_existente(self, username, password):
+        if not self.cursor:
+            print("No hay conexión a la base de datos")
+            return False
+        try: 
+            self.cursor.execute("SELECT username, password FROM users WHERE username = ? AND password = ?", (username, password))
+            result = self.cursor.fetchone()
+            if result:
+                print("Usuario verificado")
+                return True
+            else:
+                print("Usuario no existente")
+                return False
+        except pyodbc.Error as e:
+            print("Error al verificar:", e)
+            return False
+        
+    # def limpiar_tabla(self):
     #     self.cursor.execute("DELETE from users")
     #     self.connection.commit()
 
@@ -68,6 +84,8 @@ class GrupoCajetaDB:
         print("Conexión cerrada")
 
 
-
+# db = GrupoCajetaDB()
+# db.conectar()
+# db.limpiar_tabla()
 
 
