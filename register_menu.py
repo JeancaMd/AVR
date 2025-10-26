@@ -90,6 +90,7 @@ class MenuRegistro(Window):
                 self.mostrar_error('Error de conexión a la base de datos')
                 return False
             if db.verificar_usuario(username, email, password):
+                Window.user = username
                 return True
             
         except Exception as e:

@@ -1,4 +1,4 @@
-import pyodbc
+import pyodbc, time
 
 class GrupoCajetaDB:
     def __init__(self):
@@ -10,20 +10,29 @@ class GrupoCajetaDB:
         self.connection = None
         self.cursor = None
 
-    def conectar(self):
-        try: 
-            self.connection = pyodbc.connect(
-                f'DRIVER={self.driver};SERVER={self.server};DATABASE={self.database};UID={self.db_username};PWD={self.password}'
-            )
-            self.cursor = self.connection.cursor()
-            print('Connection successful')
-            return True
-    
-        except pyodbc.Error as e:
-            print('Error de conexion:', e)
-            self.connection = None
-            self.cursor = None
-            return False
+    def conectar(self, reintentos=3):
+        for intento in range(reintentos):
+            try:
+                self.connection = pyodbc.connect(
+                    f'DRIVER={self.driver};'
+                    f'SERVER={self.server};'
+                    f'DATABASE={self.database};'
+                    f'UID={self.db_username};'
+                    f'PWD={self.password};'
+                    f'Timeout=30',
+                )
+                self.cursor = self.connection.cursor()
+                print('Conectado a base de datos.')
+                return True
+
+            except pyodbc.Error as e:
+                print(f'Error de conexión (intento {intento + 1}):', e)
+                time.sleep(5)
+
+        print('No se pudo conectar a la base de datos')
+        self.connection = None
+        self.cursor = None
+        return False
 
     def ingresar_datos(self, username, email, password):
         if not self.cursor:
@@ -31,7 +40,7 @@ class GrupoCajetaDB:
             return False
         
         try:
-            self.cursor.execute("INSERT INTO users (username, email, password) VALUES (?,?,?)", (username, email, password))
+            self.cursor.execute("INSERT INTO users (username, email, password, theme) VALUES (?,?,?,?)", (username, email, password, 0))
             self.connection.commit()
             return True
         except pyodbc.Error as e:
@@ -58,20 +67,41 @@ class GrupoCajetaDB:
     def verificar_usuario_existente(self, username, password):
         if not self.cursor:
             print("No hay conexión a la base de datos")
-            return False
+            return None
         try: 
-            self.cursor.execute("SELECT username, password FROM users WHERE username = ? AND password = ?", (username, password))
+            self.cursor.execute(
+                "SELECT theme FROM users WHERE username = ? AND password = ?",
+                (username, password)
+            )
             result = self.cursor.fetchone()
             if result:
-                print("Usuario verificado")
-                return True
+                tema = result[0]
+                print(f"Usuario verificado, tema = {tema}")
+                return tema
             else:
                 print("Usuario no existente")
-                return False
+                return None
         except pyodbc.Error as e:
             print("Error al verificar:", e)
+            return None
+               
+    def actualizar_tema(self, username, tema):
+        if not self.cursor:
+            print("No hay conexión a la base de datos")
             return False
-        
+        try:
+            self.cursor.execute(
+                "UPDATE users SET theme = ? WHERE username = ?",
+                (tema, username)
+            )
+            self.connection.commit()
+            print(f"Tema actualizado a {tema} para usuario {username}")
+            return True
+        except pyodbc.Error as e:
+            print("Error al actualizar tema:", e)
+            return False
+
+
     # def limpiar_tabla(self):
     #     self.cursor.execute("DELETE from users")
     #     self.connection.commit()
