@@ -1,6 +1,7 @@
 import pygame
 from src import Button
 from src.window import Window
+from database import GrupoCajetaDB
 
 pygame.init()
 
@@ -8,13 +9,14 @@ pygame.init()
 class MainMenu(Window):
     def __init__(self):
         super().__init__()
+        print(self.user)
 
-        ##-- Configuración de posiciones
-        center_x = self.RESOLUTION[0] / 2
+        self.center_x = self.RESOLUTION[0] / 2
+        self.alt_font = pygame.font.SysFont("High tower text", 40)
         
         ##-- Botón Iniciar
         self.start_button = Button.Button(
-            center_x, 
+            self.center_x, 
             self.RESOLUTION[1] / 1.68, 
             self.menu_button, 
             self.screen, 
@@ -26,7 +28,7 @@ class MainMenu(Window):
 
         ##-- Botón Opciones
         self.options_button = Button.Button(
-            center_x, 
+            self.center_x, 
             self.RESOLUTION[1] / 1.36, 
             self.menu_button, 
             self.screen, 
@@ -37,7 +39,7 @@ class MainMenu(Window):
 
         ##-- Botón Salir
         self.exit_button = Button.Button(
-            center_x, 
+            self.center_x, 
             self.RESOLUTION[1] / 1.14, 
             self.menu_button, 
             self.screen, 
@@ -46,18 +48,26 @@ class MainMenu(Window):
         self.label_exit = self.font.render("Salir", True, (206, 143, 31))
         self.exit_rect = self.label_exit.get_rect(center=self.exit_button.rect.center)
 
+        self.welcome_text = self.alt_font.render(f"Bienvenido: {self.user}", 1, (206,143,31))
+        self.rect_welcome = self.welcome_text.get_rect(midtop=(self.RESOLUTION[0] / 2, 35))                                 
+                                             
     def render(self):
+        from options_menu import Options
+        from lvl1 import Level1
         self.screen.blit(self.menu_image, (0, 0))
 
         if self.start_button.draw():
-            print("INICIAR")
+            self.cambiar_ventana(Level1)
         if self.options_button.draw():
-            print("OPCIONES")
+            self.cambiar_ventana(Options)
         if self.exit_button.draw():
             self.running = False
 
         self.screen.blit(self.label_start, self.start_rect)
         self.screen.blit(self.label_options, self.options_rect)
         self.screen.blit(self.label_exit, self.exit_rect)
+        self.screen.blit(self.welcome_text, self.rect_welcome)
+
+
 
         pygame.display.flip()

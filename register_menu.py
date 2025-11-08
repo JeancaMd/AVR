@@ -35,29 +35,35 @@ class MenuRegistro(Window):
         self.label_accept = self.font.render("Aceptar", 1, (206,143,31))
         self.accept_rect = self.label_accept.get_rect(center=(self.accept_button.rect.centerx, self.accept_button.rect.centery))
 
+        ##-- Boton de volver
+        self.back_buttonx = Button.Button(self.RESOLUTION[0]/12, self.RESOLUTION[1]/1.05, self.back_button, self.screen, 0.07)
 
     def handle_events(self):
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.running = False
-                    self.next_window = None
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+                self.next_window = None
 
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    if self.accept_button.rect.collidepoint(event.pos):
-                        from start_menu import MainMenu
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if self.accept_button.rect.collidepoint(event.pos):
+                    from start_menu import MainMenu
 
-                        ## Obtener valores ingresados en los textbox
-                        ## Se mandan a database.py para verificarlos
-                        self.username_text = self.username_input.get_text()
-                        self.email_text = self.email_input.get_text()
-                        self.password_text = self.password_input.get_text()
+                    ## Obtener valores ingresados en los textbox
+                    ## Se mandan a database.py para verificarlos
+                    self.username_text = self.username_input.get_text()
+                    self.email_text = self.email_input.get_text()
+                    self.password_text = self.password_input.get_text()
 
-                        ## Verifica que los datos sean válidos antes de enviarlos a database.py
-                        ## Si la verificación es correcta, cambia de ventana
-                        if self.verificar_datos(self.username_text, self.email_text, self.password_text):
-                            self.cambiar_ventana(MainMenu)
+                    ## Verifica que los datos sean válidos antes de enviarlos a database.py
+                    ## Si la verificación es correcta, cambia de ventana
+                    if self.verificar_datos(self.username_text, self.email_text, self.password_text):
+                        self.cambiar_ventana(MainMenu)
 
-                self.manager.process_events(event)
+                if self.back_buttonx.rect.collidepoint(event.pos):
+                    from main import Main
+                    self.cambiar_ventana(Main)
+                    
+            self.manager.process_events(event)
 
 
     def mostrar_error(self, mensaje_error):
@@ -90,6 +96,7 @@ class MenuRegistro(Window):
                 self.mostrar_error('Error de conexión a la base de datos')
                 return False
             if db.verificar_usuario(username, email, password):
+                Window.user = username
                 return True
             
         except Exception as e:
@@ -107,6 +114,7 @@ class MenuRegistro(Window):
         self.screen.blit(self.label_email, self.email_rect)
         self.screen.blit(self.label_password, self.password_rect)
         self.accept_button.draw()
+        self.back_buttonx.draw()
         self.screen.blit(self.label_accept, self.accept_rect)
     
         self.manager.draw_ui(self.screen)

@@ -10,11 +10,30 @@ class Window:
     FONT_SIZE_X = int(RESOLUTION[0]/32) ##Factor para mantener la fuente dentro del área del botón
     BUTTON_X = RESOLUTION[0]/5333 ##Factor para mantener las proporciones del botón sin importar la resolución
 
+    ##-- Config
+    tema = None
+    user = None
+
+    GAME_THEMES = {
+        0: "assets/images/backgrounds/game_theme0.png",
+        1: "assets/images/backgrounds/game_theme1.png",
+        2: "assets/images/backgrounds/game_theme2.png",
+    }
+
+    THEMES = {
+        0: "assets/images/backgrounds/theme_0.png",
+        1: "assets/images/backgrounds/theme_1.png",
+        2: "assets/images/backgrounds/theme_2.png",
+    }
+
     ##-- Recursos
     icon = pygame.image.load("assets/images/ui/logo.png")
-    menu_background = pygame.image.load("assets/images/backgrounds/menu_background.png")
+    menu_background = pygame.image.load(THEMES[0])
     menu_image = pygame.transform.scale(menu_background, RESOLUTION)
+    game_background = pygame.image.load(GAME_THEMES[0])
+    game_image = pygame.transform.scale(game_background, RESOLUTION)
     menu_button = pygame.image.load("assets/images/ui/menu_button.png")
+    back_button = pygame.image.load("assets/images/ui/back_button.png")
     font = pygame.font.SysFont("High tower text", FONT_SIZE_X)
     
     def __init__(self):
@@ -32,8 +51,21 @@ class Window:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
+        
+    def actualizar_tema(self, nuevo_tema=None):
+        if nuevo_tema is not None:
+            Window.tema = nuevo_tema
+
+        ruta_tema_menu = Window.THEMES.get(Window.tema, Window.THEMES[0])
+        Window.menu_background = pygame.image.load(ruta_tema_menu)
+        Window.menu_image = pygame.transform.scale(Window.menu_background, Window.RESOLUTION)
+
+        ruta_tema_juego = Window.GAME_THEMES.get(Window.tema, Window.GAME_THEMES[0])
+        Window.game_background = pygame.image.load(ruta_tema_juego)
+        Window.game_image = pygame.transform.scale(Window.game_background, Window.RESOLUTION)
 
     def render(self):
+        self.screen.blit(self.menu_image, (0, 0))
         pygame.display.flip()
 
     def run(self):

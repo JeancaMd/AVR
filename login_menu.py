@@ -30,6 +30,9 @@ class LoginMenu(Window):
         self.label_accept = self.font.render("Aceptar", 1, (206,143,31))
         self.accept_rect = self.label_accept.get_rect(center=(self.accept_button.rect.centerx, self.accept_button.rect.centery))
 
+        ##-- Boton de volver
+        self.back_buttonx = Button.Button(self.RESOLUTION[0]/12, self.RESOLUTION[1]/1.05, self.back_button, self.screen, 0.07)
+
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -49,7 +52,12 @@ class LoginMenu(Window):
                     ## Verifica que los datos sean válidos antes de enviarlos a database.py
                     ## Si la verificación es correcta, cambia de ventana
                     if self.verificar_datos(self.username_text, self.password_text):
+                        self.actualizar_tema(self.tema)
                         self.cambiar_ventana(MainMenu)
+
+                if self.back_buttonx.rect.collidepoint(event.pos):
+                    from main import Main
+                    self.cambiar_ventana(Main)
 
             self.manager.process_events(event)
 
@@ -66,8 +74,6 @@ class LoginMenu(Window):
     def verificar_datos(self, username, password):
         from database import GrupoCajetaDB
         
-        ## Validaciones básicas para garantizar un formato válido
-        ## antes de consultar a la base de datos
         if not username or not password:
             self.mostrar_error('Debe ingresar todos los datos')
             return False
@@ -77,14 +83,24 @@ class LoginMenu(Window):
             if not db.conectar():
                 self.mostrar_error('Error de conexión a la base de datos')
                 return False
-            if db.verificar_usuario_existente(username, password):
+            
+            tema_usuario = db.verificar_usuario_existente(username, password)
+            if tema_usuario is not None:
+                Window.tema = tema_usuario
+                Window.user = username
                 return True
+            else:
+                self.mostrar_error('Usuario o contraseña incorrectos')
+                return False
+            
         except Exception as e:
             print("Error:", e)
             self.mostrar_error('Error al verificar datos')
             return False
         finally:
             db.cerrar()
+
+
 
 
     def render(self):
@@ -95,6 +111,7 @@ class LoginMenu(Window):
         self.screen.blit(self.label_password, self.password_rect)
         
         self.accept_button.draw()
+        self.back_buttonx.draw()
         self.screen.blit(self.label_accept, self.accept_rect)
 
 
