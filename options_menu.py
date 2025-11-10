@@ -1,4 +1,4 @@
-import pygame
+import pygame, pygame_gui
 from src.window import Window
 from src import Button
 
@@ -40,6 +40,9 @@ class Options(Window):
         self.label_theme2 = self.font.render("Tema 2", True, (206, 143, 31))
         self.theme2_rect = self.label_theme2.get_rect(center=self.theme2_button.rect.center)
 
+        ##-- Boton de volver
+        self.back_buttonx = Button.Button(self.RESOLUTION[0]/12, self.RESOLUTION[1]/1.05, self.back_button, self.screen, 0.07)
+
 
 
     def render(self):
@@ -57,11 +60,17 @@ class Options(Window):
             self.actualizar_tema(2)
             self.db.actualizar_tema(self.user, self.tema)
 
+        if self.back_buttonx.draw():
+            from start_menu import MainMenu
+            self.running = False
+            MainMenu().run()
+
         self.screen.blit(self.label_theme1, self.theme1_rect)
         self.screen.blit(self.label_theme0, self.theme0_rect)
         self.screen.blit(self.label_theme2, self.theme2_rect)
 
         pygame.display.flip()
+                
 
     def run(self):
         from database import GrupoCajetaDB

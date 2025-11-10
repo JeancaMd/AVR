@@ -30,6 +30,9 @@ class LoginMenu(Window):
         self.label_accept = self.font.render("Aceptar", 1, (206,143,31))
         self.accept_rect = self.label_accept.get_rect(center=(self.accept_button.rect.centerx, self.accept_button.rect.centery))
 
+        ##-- Boton de volver
+        self.back_buttonx = Button.Button(self.RESOLUTION[0]/12, self.RESOLUTION[1]/1.05, self.back_button, self.screen, 0.07)
+
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -51,6 +54,10 @@ class LoginMenu(Window):
                     if self.verificar_datos(self.username_text, self.password_text):
                         self.actualizar_tema(self.tema)
                         self.cambiar_ventana(MainMenu)
+
+                if self.back_buttonx.rect.collidepoint(event.pos):
+                    from main import Main
+                    self.cambiar_ventana(Main)
 
             self.manager.process_events(event)
 
@@ -104,6 +111,7 @@ class LoginMenu(Window):
         self.screen.blit(self.label_password, self.password_rect)
         
         self.accept_button.draw()
+        self.back_buttonx.draw()
         self.screen.blit(self.label_accept, self.accept_rect)
 
 

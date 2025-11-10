@@ -53,10 +53,11 @@ class MainMenu(Window):
                                              
     def render(self):
         from options_menu import Options
+        from lvl1 import Level1
         self.screen.blit(self.menu_image, (0, 0))
 
         if self.start_button.draw():
-            print("INICIAR")
+            self.cambiar_ventana(Level1)
         if self.options_button.draw():
             self.cambiar_ventana(Options)
         if self.exit_button.draw():
