@@ -1,5 +1,6 @@
 import pygame, pygame_gui
 from src.window import Window
+import re
 
 pygame.init()
 
@@ -48,14 +49,10 @@ class MenuRegistro(Window):
                 if self.accept_button.rect.collidepoint(event.pos):
                     from start_menu import MainMenu
 
-                    ## Obtener valores ingresados en los textbox
-                    ## Se mandan a database.py para verificarlos
-                    self.username_text = self.username_input.get_text()
-                    self.email_text = self.email_input.get_text()
+                    self.username_text = self.username_input.get_text().strip()
+                    self.email_text = self.email_input.get_text().strip()
                     self.password_text = self.password_input.get_text()
 
-                    ## Verifica que los datos sean válidos antes de enviarlos a database.py
-                    ## Si la verificación es correcta, cambia de ventana
                     if self.verificar_datos(self.username_text, self.email_text, self.password_text):
                         self.cambiar_ventana(MainMenu)
 
@@ -68,26 +65,80 @@ class MenuRegistro(Window):
 
     def mostrar_error(self, mensaje_error):
         pygame_gui.windows.UIMessageWindow(
-            rect=pygame.Rect((150, 220), (500, 150)),
+            rect=pygame.Rect((150, 220), (500, 200)),
             html_message=f"<font color='#FF0000'><b>Error de Registro</b></font><br>{mensaje_error}",
             manager=self.manager,
             window_title="Error"
         )
 
+    def validar_username(self, username):
+        if len(username) < 3:
+            return False, "El username debe tener al menos 3 caracteres"
+        if len(username) > 20:
+            return False, "El username no puede tener más de 20 caracteres"
+        if not re.match("^[a-zA-Z0-9_]+$", username):
+            return False, "El username solo puede contener letras, números y guión bajo"
+        return True, ""
+
+    def validar_email(self, email):
+        if not email:
+            return False, "Debe ingresar un correo"
+        
+        patron_email = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(patron_email, email):
+            return False, "Formato de correo inválido"
+        
+        return True, ""
+
+    def validar_contraseña(self, password):
+
+        # - Mínimo 8 caracteres
+        # - Al menos una letra mayúscula
+        # - Al menos una letra minúscula
+        # - Al menos un número
+        # - Al menos un carácter especial
+
+        if len(password) < 8:
+            return False, "La contraseña debe tener al menos 8 caracteres"
+        
+        if len(password) > 128:
+            return False, "La contraseña no puede tener más de 128 caracteres"
+        
+        if not re.search(r'[A-Z]', password):
+            return False, "La contraseña debe contener al menos una mayúscula"
+        
+        if not re.search(r'[a-z]', password):
+            return False, "La contraseña debe contener al menos una minúscula"
+        
+        if not re.search(r'\d', password):
+            return False, "La contraseña debe contener al menos un número"
+        
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/;`~]', password):
+            return False, "La contraseña debe contener al menos un carácter especial (!@#$%...)"
+        
+        return True, ""
+
 
     def verificar_datos(self, username, email, password):
         from database import GrupoCajetaDB
 
-        ## Validaciones básicas para garantizar un formato válido
-        ## antes de consultar a la base de datos
         if not username or not email or not password:
             self.mostrar_error('Debe ingresar todos los datos')
             return False
-        if '@' not in email or '.' not in email:
-            self.mostrar_error('Ingrese un correo valido')
+
+        valido, mensaje = self.validar_username(username)
+        if not valido:
+            self.mostrar_error(mensaje)
             return False
-        if len(password)<6:
-            self.mostrar_error('La contraseña debe ser mayor a 6 carácteres')
+        
+        valido, mensaje = self.validar_email(email)
+        if not valido:
+            self.mostrar_error(mensaje)
+            return False
+        
+        valido, mensaje = self.validar_contraseña(password) 
+        if not valido:
+            self.mostrar_error(mensaje)
             return False
         
         db = GrupoCajetaDB()
@@ -95,9 +146,13 @@ class MenuRegistro(Window):
             if not db.conectar():
                 self.mostrar_error('Error de conexión a la base de datos')
                 return False
+            
             if db.verificar_usuario(username, email, password):
                 Window.user = username
                 return True
+            else:
+                self.mostrar_error('El username o email ya está registrado')
+                return False
             
         except Exception as e:
             print("Error:", e)
@@ -133,15 +188,3 @@ class MenuRegistro(Window):
         if self.next_window:
             nueva_ventana = self.next_window()
             nueva_ventana.run()
-    
-
-
-
-
-
-
-
-
-
-
-
