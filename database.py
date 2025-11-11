@@ -1,4 +1,4 @@
-import pyodbc, time
+import pyodbc, time, bcrypt
 
 class GrupoCajetaDB:
     def __init__(self):
@@ -19,7 +19,8 @@ class GrupoCajetaDB:
                     f'DATABASE={self.database};'
                     f'UID={self.db_username};'
                     f'PWD={self.password};'
-                    f'Timeout=30',
+                    f'Connection Timeout=30;'
+                    f'Login Timeout=30',
                 )
                 self.cursor = self.connection.cursor()
                 print('Conectado a base de datos.')
@@ -34,13 +35,23 @@ class GrupoCajetaDB:
         self.cursor = None
         return False
 
+    def hash_contraseña(self, password):
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(password.encode("utf-8"), salt)
+        return hashed.decode("utf-8")
+    
+    def verificar_hashed(self, password, hashed_password):
+        return bcrypt.checkpw(password.encode("utf-8"), hashed_password.encode("utf-8"))
+
     def ingresar_datos(self, username, email, password):
         if not self.cursor:
             print("No hay conexión a la base de datos")
             return False
         
         try:
-            self.cursor.execute("INSERT INTO users (username, email, password, theme) VALUES (?,?,?,?)", (username, email, password, 0))
+            password_hashed = self.hash_contraseña(password)
+
+            self.cursor.execute("INSERT INTO users (username, email, password, theme) VALUES (?,?,?,?)", (username, email, password_hashed, 0))
             self.connection.commit()
             return True
         except pyodbc.Error as e:
@@ -60,6 +71,7 @@ class GrupoCajetaDB:
             else: 
                 self.ingresar_datos(username, email, password)
                 return True
+            
         except pyodbc.Error as e:
             print("Error al verificar usuario:", e)
             return False
@@ -70,14 +82,21 @@ class GrupoCajetaDB:
             return None
         try: 
             self.cursor.execute(
-                "SELECT theme FROM users WHERE username = ? AND password = ?",
-                (username, password)
+                "SELECT password, theme FROM users WHERE username = ?",
+                (username,)
             )
             result = self.cursor.fetchone()
+
             if result:
-                tema = result[0]
-                print(f"Usuario verificado, tema = {tema}")
-                return tema
+                store_hashed = result[0]
+                tema = result[1]
+
+                if self.verificar_hashed(password, store_hashed):
+                    print(f"Usuario verificado, tema = {tema}")
+                    return tema
+                else:
+                    print("Contraseña incorrecta")
+                    return None
             else:
                 print("Usuario no existente")
                 return None

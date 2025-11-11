@@ -1,5 +1,6 @@
 import pygame, pygame_gui
 from src.window import Window
+import re
 
 pygame.init()
 
@@ -164,12 +165,57 @@ class MenuRegistro(Window):
         # Asegurarse de que la ventana esté enfocada
         error_window.focus()
 
+    def validar_username(self, username):
+        if len(username) < 3:
+            return False, "El username debe tener al menos 3 caracteres"
+        if len(username) > 20:
+            return False, "El username no puede tener más de 20 caracteres"
+        if not re.match("^[a-zA-Z0-9_]+$", username):
+            return False, "El username solo puede contener letras, números y guión bajo"
+        return True, ""
+
+    def validar_email(self, email):
+        if not email:
+            return False, "Debe ingresar un correo"
+        
+        patron_email = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(patron_email, email):
+            return False, "Formato de correo inválido"
+        
+        return True, ""
+
+    def validar_contraseña(self, password):
+
+        # - Mínimo 8 caracteres
+        # - Al menos una letra mayúscula
+        # - Al menos una letra minúscula
+        # - Al menos un número
+        # - Al menos un carácter especial
+
+        if len(password) < 8:
+            return False, "La contraseña debe tener al menos 8 caracteres"
+        
+        if len(password) > 128:
+            return False, "La contraseña no puede tener más de 128 caracteres"
+        
+        if not re.search(r'[A-Z]', password):
+            return False, "La contraseña debe contener al menos una mayúscula"
+        
+        if not re.search(r'[a-z]', password):
+            return False, "La contraseña debe contener al menos una minúscula"
+        
+        if not re.search(r'\d', password):
+            return False, "La contraseña debe contener al menos un número"
+        
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/;`~]', password):
+            return False, "La contraseña debe contener al menos un carácter especial (!@#$%...)"
+        
+        return True, ""
+
 
     def verificar_datos(self, username, email, password):
         from database import GrupoCajetaDB
 
-        ## Validaciones básicas para garantizar un formato válido
-        ## antes de consultar a la base de datos
         if not username or not email or not password:
             self.mostrar_error('Debe ingresar todos los datos')
             return False
@@ -185,9 +231,13 @@ class MenuRegistro(Window):
             if not db.conectar():
                 self.mostrar_error('Error de conexión a la base de datos')
                 return False
+            
             if db.verificar_usuario(username, email, password):
                 Window.user = username
                 return True
+            else:
+                self.mostrar_error('El username o email ya está registrado')
+                return False
             
         except Exception as e:
             print("Error:", e)
