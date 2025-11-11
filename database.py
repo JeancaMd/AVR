@@ -100,6 +100,41 @@ class GrupoCajetaDB:
         except pyodbc.Error as e:
             print("Error al actualizar tema:", e)
             return False
+        
+    def guardar_puntaje(self, username, puntos, duracion):
+        if not self.cursor:
+            print("No hay conexión a la base de datos")
+            return False
+        try:
+            self.cursor.execute(
+                "INSERT INTO scores (username, puntos, duracion) VALUES (?, ?, ?)",
+                (username, puntos, duracion)
+            )
+            self.connection.commit()
+            print(f"Puntaje guardado: {username} - {puntos} puntos")
+            return True
+        except pyodbc.Error as e:
+            print("Error al guardar puntaje:", e)
+            return False
+
+    def obtener_mejores_puntajes(self, limite=5):
+        if not self.cursor:
+            print("No hay conexión a la base de datos")
+            return []
+        try:
+            self.cursor.execute(f"""
+                SELECT TOP {limite} username, MAX(puntos) AS mejor_puntaje
+                FROM scores
+                GROUP BY username
+                ORDER BY mejor_puntaje DESC
+            """)
+            resultados = self.cursor.fetchall()
+            return [(r[0], r[1]) for r in resultados]
+        except pyodbc.Error as e:
+            print("Error al obtener mejores puntajes:", e)
+            return []
+
+
 
 
     # def limpiar_tabla(self):

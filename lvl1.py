@@ -1,4 +1,6 @@
 import pygame
+import time
+from database import GrupoCajetaDB
 from src.window import Window
 from src.tablero import Tablero
 from src.rooks import *
@@ -14,6 +16,9 @@ class Level1(Window):
         self.monedas = 0
         self.avatars = AvatarsManager(self.tablero, spawn_interval=10, max_avatars=10) 
         self.monedas_coleccionables = MonedasManager(self.tablero, spawn_interval=5)
+        self.db = GrupoCajetaDB()
+        self.db.conectar()
+        self.inicio_tiempo = None
 
         self.rooks_tipos = [
             ("Sand Rook", SandRook),
@@ -106,6 +111,8 @@ class Level1(Window):
 
     def run(self):
         self.running = True
+        self.inicio_tiempo = time.time()
+
         while self.running:
             self.handle_events()
             self.tablero.update()
@@ -115,6 +122,42 @@ class Level1(Window):
             self.tablero.limpiar_rooks_muertos()
             self.render()
             self.clock.tick(60)
+
+            # --- DETECCIÓN DE FIN DE NIVEL ---
+            if (
+                getattr(self.avatars, "avatars_spawneados", 0) >= getattr(self.avatars, "max_avatars", 10)
+                and len(getattr(self.avatars, "avatars", [])) == 0
+            ):
+                print("✅ Nivel completado — no quedan más enemigos.")
+                self.finalizar_partida()
+                break
+
+
+    # 👇 OJO: aquí va fuera del run, no dentro
+    def finalizar_partida(self):
+        fin_tiempo = time.time()
+        duracion = fin_tiempo - self.inicio_tiempo
+
+        # Fórmula: 5000 - 100 puntos por cada 1m15s después del primer minuto
+        minutos_extra = max(0, duracion - 55) / 5
+        penalizacion = int(minutos_extra) * 100
+        puntaje = max(0, 5000 - penalizacion)
+
+        print(f"Duración: {duracion:.2f}s")
+        print(f"Puntaje final: {puntaje}")
+
+        # Guardar puntaje en la base de datos
+        try:
+            self.db.guardar_puntaje(self.user, puntaje, duracion)
+        except Exception as e:
+            print("Error al guardar puntaje:", e)
+        finally:
+            self.db.cerrar()
+
+        # Ir al salón de la fama (en pygame)
+        from fama import SalonFama
+        self.cambiar_ventana(SalonFama)
+
             
 if __name__ == "__main__":
     Level1().run()
