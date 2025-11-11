@@ -3,6 +3,7 @@ from src import Button
 from register_menu import MenuRegistro
 from src.window import Window
 from login_menu import LoginMenu
+from instrucciones import Instrucciones
 
 pygame.init()
 
@@ -29,15 +30,14 @@ class Main(Window):
             self.screen.blit(self.menu_image, (0, 0))
 
             if self.login_btn.draw():
-                print("Iniciar Sesión")
                 self.running = False
                 self.cambiar_ventana(LoginMenu)
             if self.register_btn.draw():
-                print("Registrar")
                 self.running = False
                 self.cambiar_ventana(MenuRegistro)
             if self.help_btn.draw():
-                print("?")
+                self.running = False
+                self.cambiar_ventana(Instrucciones)
 
             self.screen.blit(self.label_login, self.login_rect)
             self.screen.blit(self.label_register, self.register_rect)
