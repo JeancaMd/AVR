@@ -107,14 +107,6 @@ class LoginMenu(Window):
                     
             # Manejar entrada de texto
             if event.type == pygame.KEYDOWN:
-
-                # Manejar la tecla ENTER para iniciar sesión
-                if event.key == pygame.K_RETURN:
-                    from start_menu import MainMenu
-                    if self.verificar_datos(self.username_text, self.password_text):
-                        self.actualizar_tema(self.tema)
-                        self.cambiar_ventana(MainMenu)
-                        
                 if self.username_activo:
                     if event.key == pygame.K_BACKSPACE:
                         self.username_text = self.username_text[:-1]
@@ -127,7 +119,12 @@ class LoginMenu(Window):
                     else:
                         self.password_text += event.unicode
                 
-
+                # Manejar la tecla ENTER para iniciar sesión
+                if event.key == pygame.K_RETURN:
+                    from start_menu import MainMenu
+                    if self.verificar_datos(self.username_text, self.password_text):
+                        self.actualizar_tema(self.tema)
+                        self.cambiar_ventana(MainMenu)
 
             # PROCESAR EVENTOS DE PYGAME_GUI (IMPORTANTE PARA LAS VENTANAS DE ERROR)
             self.manager.process_events(event)
