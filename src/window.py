@@ -46,6 +46,8 @@ class Window:
     def cambiar_ventana(self, ventana_clase):
         self.next_window = ventana_clase
         self.running = False
+        pygame.event.clear()
+
 
     def handle_events(self):
         for event in pygame.event.get():
