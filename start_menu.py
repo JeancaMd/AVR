@@ -11,6 +11,8 @@ class MainMenu(Window):
         super().__init__()
         print(self.user)
 
+        pygame.display.set_caption("MENÚ PRINCIPAL")
+
         self.center_x = self.RESOLUTION[0] / 2
         self.alt_font = pygame.font.SysFont("High tower text", 40)
         
