@@ -8,7 +8,7 @@ class LoginMenu(Window):
         super().__init__()
 
         # Configurar título de la ventana
-        pygame.display.set_caption("Iniciar Sesión")
+        pygame.display.set_caption("Menú de inicio de sesión")
 
         from src import Button
 
@@ -25,7 +25,7 @@ class LoginMenu(Window):
         self.CAFE_CLARO = (120, 80, 40)   # Café más claro
         self.BEIGE = (222, 184, 135)      # Beige para fondos
         self.BLANCO = (255, 255, 255)     # Blanco puro
-        self.GRIS_SUAVE = (80, 80, 80)    # Gris suave para placeholders
+        self.GRIS_SUAVE = (150, 150, 150)    # Gris suave para placeholders
 
         # Estados de los campos de entrada
         self.username_activo = False
@@ -35,12 +35,27 @@ class LoginMenu(Window):
         self.username_text = ""
         self.password_text = ""
 
+        # Variables para controlar el borrado continuo (AGREGADO EN EL INIT)
+        self.backspace_pressed = False
+        self.backspace_initial_delay = 500  # Milisegundos antes del borrado continuo
+        self.backspace_repeat_delay = 50    # Milisegundos entre borrados continuos
+        self.backspace_timer = 0
+
         ##-- Rectángulos para los campos de entrada (sin pygame_gui)
         username_y = self.RESOLUTION[1] / 2.2
         self.username_rect = pygame.Rect(self.RESOLUTION[0]/2 - 200, username_y + 70, 400, 50)
        
         password_y = username_y + 80
         self.password_rect = pygame.Rect(self.RESOLUTION[0]/2 - 200, password_y + 80, 400, 50)
+
+        self.mostrar_password = False
+
+        self.password_toggle_rect = pygame.Rect(
+            self.password_rect.right + 30,
+            self.password_rect.y,
+            110,
+            self.password_rect.height
+            )
 
         ##-- Boton de aceptar (posición más baja)
         button_y = password_y + 210
@@ -74,6 +89,18 @@ class LoginMenu(Window):
         
         self.screen.blit(texto_surf, (rect.x + 10, rect.y + (rect.height - texto_surf.get_height()) // 2))
 
+    def dibujar_boton_password(self):
+        # Dibujar botón de mostrar/ocultar
+        color_fondo = self.DORADO_OSCURO if self.password_toggle_rect.collidepoint(pygame.mouse.get_pos()) else self.CAFE_CLARO
+        pygame.draw.rect(self.screen, color_fondo, self.password_toggle_rect, border_radius=8)
+        pygame.draw.rect(self.screen, self.DORADO, self.password_toggle_rect, 2, border_radius=8)
+        
+        # Texto del botón
+        texto_boton = "Mostrar" if not self.mostrar_password else "Ocultar"
+        texto_surf = self.font.render(texto_boton, True, self.BLANCO)
+        texto_rect = texto_surf.get_rect(center=self.password_toggle_rect.center)
+        self.screen.blit(texto_surf, texto_rect)
+
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -82,6 +109,8 @@ class LoginMenu(Window):
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 # Verificar clic en campos de texto
+                if self.password_toggle_rect.collidepoint(event.pos):
+                    self.mostrar_password = not self.mostrar_password
                 if self.username_rect.collidepoint(event.pos):
                     self.username_activo = True
                     self.password_activo = False
@@ -110,12 +139,16 @@ class LoginMenu(Window):
                 if self.username_activo:
                     if event.key == pygame.K_BACKSPACE:
                         self.username_text = self.username_text[:-1]
+                        self.backspace_pressed = True
+                        self.backspace_timer = pygame.time.get_ticks() + self.backspace_initial_delay
                     else:
                         self.username_text += event.unicode
                 
                 elif self.password_activo:
                     if event.key == pygame.K_BACKSPACE:
                         self.password_text = self.password_text[:-1]
+                        self.backspace_pressed = True
+                        self.backspace_timer = pygame.time.get_ticks() + self.backspace_initial_delay
                     else:
                         self.password_text += event.unicode
                 
@@ -125,9 +158,24 @@ class LoginMenu(Window):
                     if self.verificar_datos(self.username_text, self.password_text):
                         self.actualizar_tema(self.tema)
                         self.cambiar_ventana(MainMenu)
+            
+            # Detectar cuando se suelta la tecla de borrado
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_BACKSPACE:
+                    self.backspace_pressed = False
 
             # PROCESAR EVENTOS DE PYGAME_GUI (IMPORTANTE PARA LAS VENTANAS DE ERROR)
             self.manager.process_events(event)
+        
+        # Lógica para borrado continuo (fuera del bucle de eventos)
+        current_time = pygame.time.get_ticks()
+        if self.backspace_pressed and current_time >= self.backspace_timer:
+            if self.username_activo and self.username_text:
+                self.username_text = self.username_text[:-1]
+                self.backspace_timer = current_time + self.backspace_repeat_delay
+            elif self.password_activo and self.password_text:
+                self.password_text = self.password_text[:-1]
+                self.backspace_timer = current_time + self.backspace_repeat_delay
 
     def mostrar_error(self, mensaje_error):
         # Limpiar cualquier ventana de error anterior
@@ -178,8 +226,6 @@ class LoginMenu(Window):
 
     def render(self):
         self.screen.blit(self.menu_image, (0, 0))
-        
-        # Fondo semitransparente
         self.screen.blit(self.s, (0,0))
         
         # Dibujar campos de entrada personalizados
@@ -192,7 +238,7 @@ class LoginMenu(Window):
         )
         
         # Para la contraseña, mostrar asteriscos
-        password_display = "*" * len(self.password_text) if self.password_text else ""
+        password_display = self.password_text if self.mostrar_password else "*" * len(self.password_text)
         self.dibujar_caja_entrada(
             self.password_rect, 
             password_display, 
@@ -200,6 +246,8 @@ class LoginMenu(Window):
             "Contraseña:",
             "Ingrese su contraseña"
         )
+
+        self.dibujar_boton_password()
         
         # Botones
         self.accept_button.draw()

@@ -15,7 +15,7 @@ class Options(Window):
             self.screen, 
             self.BUTTON_X
         )
-        self.label_theme0 = self.font.render("Tema 0", True, (206, 143, 31))
+        self.label_theme0 = self.font.render("Tema Original", True, (206, 143, 31))
         self.theme0_rect = self.label_theme0.get_rect(center=self.theme0_button.rect.center)
                                                       
     ##-- Botón Tema Claro
@@ -26,7 +26,7 @@ class Options(Window):
             self.screen, 
             self.BUTTON_X
         )
-        self.label_theme1 = self.font.render("Tema 1", True, (206, 143, 31))
+        self.label_theme1 = self.font.render("Tema Desértico", True, (206, 143, 31))
         self.theme1_rect = self.label_theme1.get_rect(center=self.theme1_button.rect.center)
 
     ##-- Botón Tema Navidad
@@ -37,7 +37,7 @@ class Options(Window):
             self.screen, 
             self.BUTTON_X
         )
-        self.label_theme2 = self.font.render("Tema 2", True, (206, 143, 31))
+        self.label_theme2 = self.font.render("Tema Navideño", True, (206, 143, 31))
         self.theme2_rect = self.label_theme2.get_rect(center=self.theme2_button.rect.center)
 
         ##-- Boton de volver
