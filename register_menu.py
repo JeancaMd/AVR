@@ -272,22 +272,30 @@ class MenuRegistro(Window):
         
         return True, ""
 
-
     def verificar_datos(self, username, email, password):
         from database import GrupoCajetaDB
 
-        if not username or not email or not password:
-            self.mostrar_error('Debe ingresar todos los datos')
+        # Validar username
+        valido, mensaje = self.validar_username(username)
+        if not valido:
+            self.mostrar_error(mensaje)
             return False
-        if '@' not in email or '.' not in email:
-            self.mostrar_error('Ingrese un correo válido')
+
+        # Validar email
+        valido, mensaje = self.validar_email(email)
+        if not valido:
+            self.mostrar_error(mensaje)
             return False
-        if len(password) < 6:
-            self.mostrar_error('La contraseña debe ser mayor a 6 carácteres')
+
+        # Validar contraseña
+        valido, mensaje = self.validar_contraseña(password)
+        if not valido:
+            self.mostrar_error(mensaje)
             return False
-        
+
+        # Si las tres validaciones son correctas, conecta con la base de datos
         db = GrupoCajetaDB()
-        try: 
+        try:
             if not db.conectar():
                 self.mostrar_error('Error de conexión a la base de datos')
                 return False
@@ -298,13 +306,14 @@ class MenuRegistro(Window):
             else:
                 self.mostrar_error('El username o email ya está registrado')
                 return False
-            
+
         except Exception as e:
             print("Error:", e)
             self.mostrar_error('Error al verificar datos')
             return False
         finally:
             db.cerrar()
+
 
 
     def render(self):
