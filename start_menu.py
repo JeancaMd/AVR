@@ -40,7 +40,7 @@ class MainMenu(Window):
         self.rect_welcome = self.welcome_text.get_rect(midtop=(self.RESOLUTION[0] / 2, 35))                                 
                                              
     def render(self):
-        from options_menu import Options
+        from options_menu import OptionsMenu
         from fama import SalonFama
         from lvl1 import Level1
         self.screen.blit(self.menu_image, (0, 0))
@@ -50,7 +50,7 @@ class MainMenu(Window):
         if self.fame_button.draw():
             self.cambiar_ventana(SalonFama)
         if self.options_button.draw():
-            self.cambiar_ventana(Options)
+            self.cambiar_ventana(OptionsMenu)
         if self.exit_button.draw():
             self.running = False
 
