@@ -11,7 +11,7 @@ from src.cliente import ControladorUDP
 
 
 class Level1(Window):
-    def __init__(self, pico_ip="192.168.0.105"):
+    def __init__(self):
         super().__init__()
         self.tablero = Tablero(self.RESOLUTION)
         self.clock = pygame.time.Clock()
@@ -22,11 +22,10 @@ class Level1(Window):
         self.db.conectar()
         self.inicio_tiempo = None
 
-        # Controlador UDP (cliente)
-        # Si tu Pico tiene otra IP, pásala aquí al instanciar Level1()
-        self.control = ControladorUDP(pico_ip)
+        ### Control para recibir datos desde cliente.py
+        self.control = ControladorUDP("192.168.0.107")
 
-        # Rooks disponibles
+        ### Rooks disponibles
         self.rooks_tipos = [
             ("Sand Rook", SandRook),
             ("Rock Rook", RockRook),
@@ -38,50 +37,42 @@ class Level1(Window):
         self.rook_seleccionada = None
         self.crear_botones()
 
-        # Sistema de navegación
-        self.modo_seleccion = "rooks"   # "rooks" o "tablero"
+        ### Sistema de navegación
+        self.modo_seleccion = "rooks"
         self.indice_rook = 0
         self.celda_seleccionada = [0, 0]
 
-        # Cooldown simple para evitar spam rápido del joystick (en ms)
+        ### Cooldown para evitar spam
         self.ultimo_udp_ts = 0
         self.udp_cooldown_ms = 120
 
-    # -------------------------------
-    # Manejo de comandos UDP directo
-    # -------------------------------
+
+
+# -------------------------------
+# Controlr eventos control
+# -------------------------------
     def handle_udp(self, comando):
-        """Traduce comandos directos del Pico a acciones del juego."""
-        # anti-spam: pequeñas pausas para evitar movimientos a ráfaga
         ahora = int(time.time() * 1000)
         if ahora - self.ultimo_udp_ts < self.udp_cooldown_ms:
-            # permitimos ciertos botones (ej. O) sin cooldown si necesario:
             pass
         self.ultimo_udp_ts = ahora
-
-        print("UDP <-", comando)  # debug: ver en consola qué llega
 
         if comando == "CUADRADO":
             self.modo_seleccion = "rooks"
             print("Modo: Seleccionar Rooks")
-            return
 
         if comando == "TRIANGULO":
             self.modo_seleccion = "tablero"
             print("Modo: Seleccionar Tablero")
-            return
 
         if comando == "O":
             self.recoger_moneda_en_celda()
-            return
 
-        # joystick presionado (click) coloca rook en modo tablero
         if comando == "JOYSTICK_PRESIONADO":
             if self.modo_seleccion == "tablero":
                 self.colocar_rook_en_celda()
-            return
 
-        # Movimientos verticales
+        ### Movimientos verticales del joystick
         if comando == "Y+":
             if self.modo_seleccion == "rooks":
                 self.indice_rook = (self.indice_rook - 1) % len(self.rooks_tipos)
@@ -100,11 +91,9 @@ class Level1(Window):
                 self.celda_seleccionada[0] = min(self.tablero.FILAS - 1, self.celda_seleccionada[0] + 1)
             return
 
-        # Movimientos horizontales (X+, X- en tu Pico)
-        # Nota: en tu código Pico X+ alcanzaba un extremo; ajusté para que X+/X- hagan izquierda/derecha.
+        ### Movimientos horizontales joystick
         if comando == "X+":
             if self.modo_seleccion == "tablero":
-                # en tu mapeo original X+ era 'derecha' o 'izquierda', ajusta si lo necesitas
                 self.celda_seleccionada[1] = min(self.tablero.COLUMNAS - 1, self.celda_seleccionada[1] + 1)
             return
 
@@ -113,19 +102,19 @@ class Level1(Window):
                 self.celda_seleccionada[1] = max(0, self.celda_seleccionada[1] - 1)
             return
 
-        # botón X en tu Pico puede usarse para colocar en modo tablero
+        ### botón X del control
         if comando == "X":
             if self.modo_seleccion == "tablero":
                 self.colocar_rook_en_celda()
             else:
-                # si estás en rooks, también podemos seleccionar el rook actual como "confirmar"
-                # (opcional) -- aquí simplemente imprimimos
                 print("Botón X presionado en modo rooks")
             return
 
-    # -------------------------------
-    # Eventos estándar (teclado + ratón)
-    # -------------------------------
+
+
+# -------------------------------
+# Controlar eventos del teclado y mouse
+# -------------------------------
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -160,7 +149,6 @@ class Level1(Window):
                         print("No hay suficientes monedas para colocar el rook")
 
     def handle_keyboard(self, key):
-        """Teclado: A/S para cambiar modo, D recoger; flechas para navegar; ENTER para colocar."""
         if key == pygame.K_a:
             self.modo_seleccion = "rooks"
             print("Modo: Seleccionar Rooks")
@@ -175,7 +163,6 @@ class Level1(Window):
             self.recoger_moneda_en_celda()
             return
 
-        # Navegación por flechas
         if self.modo_seleccion == "rooks":
             if key == pygame.K_UP:
                 self.indice_rook = (self.indice_rook - 1) % len(self.rooks_tipos)
@@ -185,7 +172,7 @@ class Level1(Window):
                 self.indice_rook = (self.indice_rook + 1) % len(self.rooks_tipos)
                 self.rook_seleccionada = self.rooks_tipos[self.indice_rook]
                 print(f"Rook: {self.rook_seleccionada[0]}")
-        else:  # modo "tablero"
+        else:
             fila, col = self.celda_seleccionada
             if key == pygame.K_UP:
                 self.celda_seleccionada[0] = max(0, fila - 1)
@@ -198,9 +185,10 @@ class Level1(Window):
             elif key == pygame.K_RETURN:
                 self.colocar_rook_en_celda()
 
-    # -------------------------------
-    # UI / Botones
-    # -------------------------------
+
+# -------------------------------
+# Crear botones para los rooks
+# -------------------------------
     def crear_botones(self):
         button_size = 120
         spacing = 15
@@ -214,9 +202,9 @@ class Level1(Window):
             image = temp_rook.image
             self.botones.append((rect, nombre, image))
 
-    # -------------------------------
-    # Acciones principales (colocar / recoger)
-    # -------------------------------
+# -------------------------------
+# Acciones del tablero
+ # -------------------------------
     def colocar_rook_en_celda(self):
         if not self.rook_seleccionada:
             print("No hay rook seleccionado.")
@@ -247,9 +235,10 @@ class Level1(Window):
                 return
         print("No hay moneda en la celda seleccionada")
 
-    # -------------------------------
-    # Render
-    # -------------------------------
+
+# -------------------------------
+# Render
+# -------------------------------
     def render(self):
         self.screen.blit(self.game_image, (0, 0))
         self.tablero.draw(self.screen)
@@ -259,7 +248,7 @@ class Level1(Window):
         self.cant_monedas = self.font.render(f"Monedas: {self.monedas}", True, (255, 255, 0))
         self.screen.blit(self.cant_monedas, (40, 30))
         modo_render = self.font.render(
-            f"[A] Rooks  [S] Tablero  |  Modo: {self.modo_seleccion.upper()}",
+            f"Modo: {self.modo_seleccion.upper()}",
             True, (255, 255, 255)
         )
         self.screen.blit(modo_render, (40, 60))
@@ -280,9 +269,9 @@ class Level1(Window):
             pygame.draw.rect(self.screen, (255, 215, 0), celda.rect, 5)
         pygame.display.flip()
 
-    # -------------------------------
-    # Loop principal
-    # -------------------------------
+# -------------------------------
+# Loop principal
+# -------------------------------
     def move(self):
         self.avatars.move()
 
@@ -290,15 +279,12 @@ class Level1(Window):
         self.running = True
         self.inicio_tiempo = time.time()
         while self.running:
-            # 1) leer UDP (si hay)
             comando = self.control.obtener_evento()
             if comando:
                 self.handle_udp(comando)
 
-            # 2) eventos estándar
             self.handle_events()
 
-            # 3) lógica y render
             self.tablero.update()
             monedas_ganadas = self.avatars.update()
             self.monedas += monedas_ganadas
@@ -307,7 +293,7 @@ class Level1(Window):
             self.render()
             self.clock.tick(60)
 
-            # 4) condición de fin de nivel
+            ### Finalizar nivel
             if (
                 getattr(self.avatars, "avatars_spawneados", 0) >= getattr(self.avatars, "max_avatars", 10)
                 and len(getattr(self.avatars, "avatars", [])) == 0
@@ -316,9 +302,9 @@ class Level1(Window):
                 self.finalizar_partida()
                 break
 
-    # -------------------------------
-    # Finalizar
-    # -------------------------------
+# -------------------------------
+# Finalizar
+ # -------------------------------
     def finalizar_partida(self):
         fin_tiempo = time.time()
         duracion = fin_tiempo - self.inicio_tiempo
@@ -336,6 +322,3 @@ class Level1(Window):
         from fama import SalonFama
         self.cambiar_ventana(SalonFama)
 
-
-if __name__ == "__main__":
-    Level1().run()

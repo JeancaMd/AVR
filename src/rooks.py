@@ -13,19 +13,18 @@ class Rook:
         self.velocidad_ataque = 4.0 
         self.tiempo_ultimo_ataque = pygame.time.get_ticks()
         self.oponente = None 
-
         self.image = pygame.image.load(image_path).convert_alpha()
         self.image = pygame.transform.scale(self.image, (size, size))
         self.rect = self.image.get_rect(topleft=(x, y))
 
-        # Sprites de ataque (rayos)
+        ### Sprites de ataque (rayos)
         self.attack_sprites = []
         self.mostrar_ataque = False
         self.tiempo_mostrar_ataque = 0
-        self.duracion_sprite_ataque = 500  # Duración total de la animación
+        self.duracion_sprite_ataque = 500  ### Duración de la animación
         self.sprite_ataque_actual = 0
         self.tiempo_ultimo_cambio_sprite = 0
-        self.velocidad_animacion_ataque = 200  # Milisegundos entre cada sprite
+        self.velocidad_animacion_ataque = 200  ### Milisegundos entre cada sprite
         
         if attack_sprite_paths:
             for path in attack_sprite_paths:
@@ -34,15 +33,14 @@ class Rook:
                 self.attack_sprites.append(sprite)
 
     def atacar(self, objetivo):
-        """Realiza un ataque al objetivo"""
         tiempo_actual = pygame.time.get_ticks()
-        delta_t = (tiempo_actual - self.tiempo_ultimo_ataque) / 1000.0
+        tiempo_ultimo_ataque = (tiempo_actual - self.tiempo_ultimo_ataque) / 1000.0  ### Detectar tiempo desde el ultimo ataque
         
-        if delta_t >= self.velocidad_ataque:
+        if tiempo_ultimo_ataque >= self.velocidad_ataque:
             objetivo.vida -= self.ataque
             self.tiempo_ultimo_ataque = tiempo_actual
             
-            # Activar animación de ataque
+            ### Activar animación de ataque
             self.mostrar_ataque = True
             self.tiempo_mostrar_ataque = tiempo_actual
             self.sprite_ataque_actual = 0
@@ -51,30 +49,27 @@ class Rook:
         return False
 
     def actualizar_animacion_ataque(self):
-        """Alterna entre los sprites de ataque"""
         tiempo_actual = pygame.time.get_ticks()
         
-        # Cambiar al siguiente sprite
+        ### Cambiar al siguiente sprite
         if tiempo_actual - self.tiempo_ultimo_cambio_sprite >= self.velocidad_animacion_ataque:
             self.sprite_ataque_actual = (self.sprite_ataque_actual + 1) % len(self.attack_sprites)
             self.tiempo_ultimo_cambio_sprite = tiempo_actual
         
-        # Desactivar después de la duración total
         if tiempo_actual - self.tiempo_mostrar_ataque >= self.duracion_sprite_ataque:
             self.mostrar_ataque = False
 
     def update(self):
-        # Actualizar animación de ataque
+        ### Actualizar animación de ataque
         if self.mostrar_ataque and self.attack_sprites:
             self.actualizar_animacion_ataque()
         
         if self.oponente and self.oponente.vida > 0:
             self.atacar(self.oponente)
         elif self.oponente and self.oponente.vida <= 0:
-            # El oponente murió, liberar
             self.oponente = None
             self.mostrar_ataque = False
-
+ 
     def draw(self, surface):
         surface.blit(self.image, self.rect)
 
@@ -90,7 +85,6 @@ class Rook:
         pygame.draw.rect(surface, (0, 0, 0), (bar_x, bar_y, bar_width, bar_height), 1)
     
     def draw_attack(self, surface):
-        """Dibuja el sprite de ataque (llamar después de dibujar todo lo demás)"""
         if self.mostrar_ataque and self.attack_sprites:
             sprite_actual = self.attack_sprites[self.sprite_ataque_actual]
             attack_x = self.rect.centerx - sprite_actual.get_width() // 2
@@ -149,7 +143,7 @@ class FireRook(Rook):
 class WaterRook(Rook):
     nombre = "Water Rook"
     ataque = 8
-    vida = 10
+    vida = 16
     costo = 150
     image_path = "assets/images/ui/water_rook.png"
     attack_sprite_paths = [

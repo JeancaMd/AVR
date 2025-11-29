@@ -2,10 +2,10 @@ import pyodbc, time, bcrypt
 
 class GrupoCajetaDB:
     def __init__(self):
-        self.server = "grupocajeta01.database.windows.net"
-        self.database = "avatarsvsrooksDB"
-        self.db_username = "grupocajeta"
-        self.password = "Cajetadecoco01"
+        self.server = "grupocajeta02.database.windows.net"
+        self.database = "avr2"
+        self.db_username = "servidor2"
+        self.password = "Cajetadecoco02"
         self.driver = "{ODBC Driver 17 for SQL Server}"
         self.connection = None
         self.cursor = None
@@ -126,7 +126,7 @@ class GrupoCajetaDB:
             return False
         try:
             self.cursor.execute(
-                "INSERT INTO scores (username, puntos, duracion) VALUES (?, ?, ?)",
+                "INSERT INTO scores (username, puntos, duracion, fecha) VALUES (?, ?, ?, GETDATE())",
                 (username, puntos, duracion)
             )
             self.connection.commit()
@@ -135,6 +135,7 @@ class GrupoCajetaDB:
         except pyodbc.Error as e:
             print("Error al guardar puntaje:", e)
             return False
+
 
     def obtener_mejores_tiempos(self, limite=5):
         if not self.cursor:

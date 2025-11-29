@@ -66,13 +66,11 @@ class Tablero:
         ]
 
     def draw(self, surface):
-        # Dibujar todas las celdas y rooks
         for fila in self.celdas:
             for celda in fila:
                 celda.draw(surface)
 
     def draw_attacks(self, surface):
-        """Dibuja los sprites de ataque de todos los rooks (llamar después de dibujar avatares)"""
         for fila in self.celdas:
             for celda in fila:
                 if celda.rook:

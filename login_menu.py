@@ -1,16 +1,14 @@
 import pygame, pygame_gui
 from src.window import Window
+from src import Button
+
 
 pygame.init()
 
 class LoginMenu(Window):
     def __init__(self):
         super().__init__()
-
-        # Configurar título de la ventana
         pygame.display.set_caption("Menú de inicio de sesión")
-
-        from src import Button
 
         self.clock = pygame.time.Clock()
         self.manager = pygame_gui.UIManager(self.RESOLUTION)
@@ -18,30 +16,30 @@ class LoginMenu(Window):
         self.s = pygame.Surface(self.RESOLUTION)
         self.s.set_alpha(110)
 
-        # Paleta de colores dorado/café
+        ### Paleta de colores dorado/café
         self.DORADO = (206, 143, 31)      # Color dorado original
         self.DORADO_OSCURO = (160, 110, 20)  # Dorado más oscuro
         self.CAFE = (101, 67, 33)         # Color café madera
         self.CAFE_CLARO = (120, 80, 40)   # Café más claro
         self.BEIGE = (222, 184, 135)      # Beige para fondos
         self.BLANCO = (255, 255, 255)     # Blanco puro
-        self.GRIS_SUAVE = (150, 150, 150)    # Gris suave para placeholders
+        self.GRIS_SUAVE = (150, 150, 150)    # Gris para placeholders
 
-        # Estados de los campos de entrada
+        ### Estados de los campos de entrada
         self.username_activo = False
         self.password_activo = False
         
-        # Texto de los campos
+        ### Texto de los campos
         self.username_text = ""
         self.password_text = ""
 
-        # Variables para controlar el borrado continuo (AGREGADO EN EL INIT)
+        ### Variables para controlar el borrado
         self.backspace_pressed = False
-        self.backspace_initial_delay = 500  # Milisegundos antes del borrado continuo
-        self.backspace_repeat_delay = 50    # Milisegundos entre borrados continuos
+        self.backspace_initial_delay = 500  ### Milisegundos antes del borrado continuo
+        self.backspace_repeat_delay = 50    ### Milisegundos entre borrados continuos
         self.backspace_timer = 0
 
-        ##-- Rectángulos para los campos de entrada (sin pygame_gui)
+        ### Rectángulos para los campos de entrada
         username_y = self.RESOLUTION[1] / 2.2
         self.username_rect = pygame.Rect(self.RESOLUTION[0]/2 - 200, username_y + 70, 400, 50)
        
@@ -57,45 +55,45 @@ class LoginMenu(Window):
             self.password_rect.height
             )
 
-        ##-- Boton de aceptar (posición más baja)
+        ### Boton de aceptar
         button_y = password_y + 210
         self.accept_button = Button.Button(self.RESOLUTION[0] / 2, button_y, self.menu_button, self.screen, 0.15)
         self.label_accept = self.font.render("Iniciar Sesión", 1, self.DORADO)
         self.accept_rect = self.label_accept.get_rect(center=(self.accept_button.rect.centerx, self.accept_button.rect.centery))
 
-        ##-- Boton de volver
+        ### Boton de volver
         self.back_buttonx = Button.Button(self.RESOLUTION[0]/12, self.RESOLUTION[1]/1.05, self.back_button, self.screen, 0.07)
 
     def dibujar_caja_entrada(self, rect, texto, activo, etiqueta, texto_placeholder="Escribe aquí..."):
-        # Dibujar etiqueta
+        ### Dibujar etiqueta
         etiqueta_surf = self.font.render(etiqueta, True, self.DORADO)
         self.screen.blit(etiqueta_surf, (rect.x, rect.y - 30))
         
-        # Fondo del campo (café madera)
+        ### Fondo del campo
         pygame.draw.rect(self.screen, self.CAFE, rect, border_radius=8)
         
-        # Borde (dorado cuando está activo, café claro cuando no)
+        ### Borde
         color_borde = self.DORADO if activo else self.CAFE_CLARO
         pygame.draw.rect(self.screen, color_borde, rect, 2, border_radius=8)
         
-        # Texto
+        ### Texto
         texto_mostrar = texto if texto else texto_placeholder
         color_texto = self.BLANCO if texto else self.GRIS_SUAVE
         texto_surf = self.font.render(texto_mostrar, True, color_texto)
         
-        # Recortar texto si es muy largo
+        ### Recortar texto si es muy largo
         if texto_surf.get_width() > rect.width - 20:
             texto_surf = self.font.render(texto_mostrar, True, color_texto)
         
         self.screen.blit(texto_surf, (rect.x + 10, rect.y + (rect.height - texto_surf.get_height()) // 2))
 
     def dibujar_boton_password(self):
-        # Dibujar botón de mostrar/ocultar
+        ### Dibujar botón de mostrar/ocultar
         color_fondo = self.DORADO_OSCURO if self.password_toggle_rect.collidepoint(pygame.mouse.get_pos()) else self.CAFE_CLARO
         pygame.draw.rect(self.screen, color_fondo, self.password_toggle_rect, border_radius=8)
         pygame.draw.rect(self.screen, self.DORADO, self.password_toggle_rect, 2, border_radius=8)
         
-        # Texto del botón
+        ### Texto del botón
         texto_boton = "Mostrar" if not self.mostrar_password else "Ocultar"
         texto_surf = self.font.render(texto_boton, True, self.BLANCO)
         texto_rect = texto_surf.get_rect(center=self.password_toggle_rect.center)
@@ -108,7 +106,7 @@ class LoginMenu(Window):
                 self.next_window = None
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                # Verificar clic en campos de texto
+                ### Verificar clic en campos de texto
                 if self.password_toggle_rect.collidepoint(event.pos):
                     self.mostrar_password = not self.mostrar_password
                 if self.username_rect.collidepoint(event.pos):
@@ -134,10 +132,8 @@ class LoginMenu(Window):
                     from main import Main
                     self.cambiar_ventana(Main)
                     
-            # Manejar entrada de texto
             if event.type == pygame.KEYDOWN:
 
-                # Manejar la tecla ENTER para iniciar sesión
                 if event.key == pygame.K_RETURN:
                     from start_menu import MainMenu
                     if self.verificar_datos(self.username_text, self.password_text):
@@ -159,23 +155,15 @@ class LoginMenu(Window):
                         self.backspace_timer = pygame.time.get_ticks() + self.backspace_initial_delay
                     else:
                         self.password_text += event.unicode
-                
-                # Manejar la tecla ENTER para iniciar sesión
-                if event.key == pygame.K_RETURN:
-                    from start_menu import MainMenu
-                    if self.verificar_datos(self.username_text, self.password_text):
-                        self.actualizar_tema(self.tema)
-                        self.cambiar_ventana(MainMenu)
             
-            # Detectar cuando se suelta la tecla de borrado
+            ### Detectar cuando se suelta la tecla de borrado
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_BACKSPACE:
                     self.backspace_pressed = False
 
-            # PROCESAR EVENTOS DE PYGAME_GUI (IMPORTANTE PARA LAS VENTANAS DE ERROR)
             self.manager.process_events(event)
         
-        # Lógica para borrado continuo (fuera del bucle de eventos)
+        ### Lógica para borrado continuo
         current_time = pygame.time.get_ticks()
         if self.backspace_pressed and current_time >= self.backspace_timer:
             if self.username_activo and self.username_text:
@@ -186,12 +174,11 @@ class LoginMenu(Window):
                 self.backspace_timer = current_time + self.backspace_repeat_delay
 
     def mostrar_error(self, mensaje_error):
-        # Limpiar cualquier ventana de error anterior
         for window in self.manager.get_root_container().elements:
             if hasattr(window, 'window_title') and window.window_title == "Error":
                 window.kill()
         
-        # Crear nueva ventana de error
+        ### Crear nueva ventana de error
         error_window = pygame_gui.windows.UIMessageWindow(
             rect=pygame.Rect((self.RESOLUTION[0]/2 - 250, self.RESOLUTION[1]/2 - 75), (500, 150)),
             html_message=f"<font color='#FF3333'><b>Error de Inicio de Sesión</b></font><br>{mensaje_error}",
@@ -199,8 +186,6 @@ class LoginMenu(Window):
             window_title="Error",
             object_id="#error_window"
         )
-        
-        # Asegurarse de que la ventana esté enfocada
         error_window.focus()
 
     def verificar_datos(self, username, password):
@@ -216,6 +201,7 @@ class LoginMenu(Window):
                 self.mostrar_error('Error de conexión a la base de datos')
                 return False
             
+            ### Cargar y aplicar el tema guardado
             tema_usuario = db.verificar_usuario_existente(username, password)
             if tema_usuario is not None:
                 Window.tema = tema_usuario
@@ -236,7 +222,7 @@ class LoginMenu(Window):
         self.screen.blit(self.menu_image, (0, 0))
         self.screen.blit(self.s, (0,0))
         
-        # Dibujar campos de entrada personalizados
+        ### Dibujar campos de entrada personalizados
         self.dibujar_caja_entrada(
             self.username_rect, 
             self.username_text, 
@@ -245,7 +231,7 @@ class LoginMenu(Window):
             "Ingrese su nombre de usuario"
         )
         
-        # Para la contraseña, mostrar asteriscos
+        ### Para la contraseña, mostrar asteriscos
         password_display = self.password_text if self.mostrar_password else "*" * len(self.password_text)
         self.dibujar_caja_entrada(
             self.password_rect, 
@@ -257,12 +243,12 @@ class LoginMenu(Window):
 
         self.dibujar_boton_password()
         
-        # Botones
+        ### Botones
         self.accept_button.draw()
         self.back_buttonx.draw()
         self.screen.blit(self.label_accept, self.accept_rect)
 
-        # Interfaz de usuario (para ventanas de error)
+        ### Interfaz de usuario (para ventanas de error)
         self.manager.draw_ui(self.screen)
 
         pygame.display.flip()
