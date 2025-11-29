@@ -21,16 +21,16 @@ class Avatar:
         self.oponente = None
         self.total_casillas = 1
 
-        # Estados: walking, attacking, dying
+        ### Estados: walking, attacking, dying
         self.state = "walking"
-        self.death_start_time = None
-        self.death_duration = 1500 
+        self.inicio_tiempo_muerte = None
+        self.duracion_muerte = 1500 
 
-        # Tiempo de control
+        ### Tiempo de control
         self.tiempo_ultimo_movimiento = pygame.time.get_ticks()
         self.tiempo_ultimo_ataque = pygame.time.get_ticks()
 
-        # Cargar sprites caminando
+        ### Cargar sprites caminando
         self.sprites_walk = []
         for path in image_paths_walk:
             img = pygame.image.load(path).convert_alpha()
@@ -38,7 +38,7 @@ class Avatar:
             img = pygame.transform.scale(img, (int(w * escala), int(h * escala)))
             self.sprites_walk.append(img)
 
-        # Cargar sprites ataque
+        ### Cargar sprites ataque
         self.sprites_attack = []
         for path in image_paths_attack:
             img = pygame.image.load(path).convert_alpha()
@@ -46,7 +46,7 @@ class Avatar:
             img = pygame.transform.scale(img, (int(w * escala), int(h * escala)))
             self.sprites_attack.append(img)
 
-        # Cargar sprites muerte (3 imágenes)
+        ### Cargar sprites muerte
         self.sprites_death = []
         for path in image_paths_death:
             img = pygame.image.load(path).convert_alpha()
@@ -54,12 +54,11 @@ class Avatar:
             img = pygame.transform.scale(img, (int(w * escala), int(h * escala)))
             self.sprites_death.append(img)
 
-        # Control de animación
+        ### Animación
         self.sprite_actual = 0
         self.tiempo_ultimo_cambio_sprite = pygame.time.get_ticks()
         self.velocidad_animacion = 200
 
-        # Imagen inicial
         self.image = self.sprites_walk[0]
         self.rect = self.image.get_rect(center=(x, y))
 
@@ -67,13 +66,12 @@ class Avatar:
         self.state = "dying"
         self.detener = True
         self.sprite_actual = 0
-        self.death_start_time = pygame.time.get_ticks()
+        self.inicio_tiempo_muerte = pygame.time.get_ticks()
 
-    def animacion_muerte_completa(self):
-        """Indica si ya pasaron los 2 segundos de animación."""
-        if self.death_start_time is None:
+    def animacion_muerte(self):
+        if self.inicio_tiempo_muerte is None:
             return False
-        return pygame.time.get_ticks() - self.death_start_time >= self.death_duration
+        return pygame.time.get_ticks() - self.inicio_tiempo_muerte >= self.duracion_muerte
 
     def actualizar_animacion(self):
         tiempo = pygame.time.get_ticks()
@@ -83,26 +81,25 @@ class Avatar:
 
         self.tiempo_ultimo_cambio_sprite = tiempo
 
+        ### Animacion muerte
         if self.state == "dying":
-            elapsed = tiempo - self.death_start_time
+            elapsed = tiempo - self.inicio_tiempo_muerte
             total_frames = len(self.sprites_death)
 
-            frame = int((elapsed / self.death_duration) * total_frames)
+            frame = int((elapsed / self.duracion_muerte) * total_frames)
             frame = min(frame, total_frames - 1)
 
             self.sprite_actual = frame
             self.image = self.sprites_death[self.sprite_actual]
-
             return
 
-
-        # Animación de combate
+        ### Animación de combate
         if self.state == "attacking":
             self.sprite_actual = (self.sprite_actual + 1) % len(self.sprites_attack)
             self.image = self.sprites_attack[self.sprite_actual]
             return
 
-        # Animación caminando
+        ### Animación caminando
         if self.state == "walking":
             self.sprite_actual = (self.sprite_actual + 1) % len(self.sprites_walk)
             self.image = self.sprites_walk[self.sprite_actual]
@@ -118,32 +115,29 @@ class Avatar:
         return False
 
     def update(self, tamaño_celda):
-
-        # Estado muerte
         if self.state == "dying":
             self.actualizar_animacion()
-            return self.animacion_muerte_completa()  # True = eliminar
+            return self.animacion_muerte()
 
-        # Si vida llegó a 0, iniciar animación de muerte
         if self.vida <= 0:
             self.iniciar_muerte()
             return False
 
         tiempo = pygame.time.get_ticks()
 
-        # Combate
+        ### Combate
         if self.oponente and self.oponente.vida > 0:
             self.state = "attacking"
             self.atacar(self.oponente)
             self.actualizar_animacion()
             return False
 
-        # Terminar combate
+        ### Terminar combate
         if self.oponente and self.oponente.vida <= 0:
             self.oponente = None
             self.state = "walking"
 
-        # Movimiento
+        ### Movimiento
         if self.state == "walking":
             self.actualizar_animacion()
             delta_t = (tiempo - self.tiempo_ultimo_movimiento) / 1000.0
@@ -167,7 +161,7 @@ class Avatar:
 
     def barra_vida(self, surface):
         if self.state == "dying":
-            return  # sin barra mientras muere
+            return
 
         bar_width = self.rect.width
         bar_height = 6
@@ -189,13 +183,12 @@ class AvatarsManager:
         self.max_avatars = max_avatars
         self.avatars_spawneados = 0
         self.on_avatar_killed = on_avatar_killed
-
         self.avatar_tipos = [Flechador, Escudero, Leñador, Canibal]
 
     def update(self):
         current_time = pygame.time.get_ticks()
 
-        # Spawning
+        ### Spawneando
         if current_time - self.last_spawn_time >= self.spawn_interval and self.avatars_spawneados < self.max_avatars:
             self.spawn_avatar()
             self.last_spawn_time = current_time
@@ -206,7 +199,7 @@ class AvatarsManager:
 
         for avatar in self.avatars:
 
-            # Si el avatar NO tiene oponente activo, buscar rook
+            ### Si el avatar no tiene objetivo, buscar rook
             if avatar.state != "dying":
                 if not avatar.oponente or avatar.oponente.vida <= 0:
                     avatar.oponente = None
@@ -220,10 +213,7 @@ class AvatarsManager:
                         if rook:
                             self.iniciar_combate(avatar, rook)
 
-            # Actualización del avatar
             eliminar = avatar.update(self.tablero.TAMAÑO_CELDA)
-
-            # Si terminó la animación de muerte → eliminar
             if eliminar:
                 avatares_muertos += 1
                 continue
@@ -232,7 +222,6 @@ class AvatarsManager:
 
         self.avatars = nuevos
         return avatares_muertos * 75
-
 
     def spawn_avatar(self):
         columna = random.randint(0, self.tablero.COLUMNAS - 1)
@@ -291,7 +280,6 @@ class AvatarsManager:
         return rook_mas_cercano
 
 
-# ==== CLASES ESPECÍFICAS DE AVATARES ====
 
 class Flechador(Avatar):
     def __init__(self, x, y, size, level=None):

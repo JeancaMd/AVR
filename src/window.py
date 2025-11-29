@@ -5,12 +5,10 @@ pygame.init()
 
 
 class Window:
-    ##-- Constantes
     RESOLUTION = (800,700)
     FONT_SIZE_X = int(RESOLUTION[0]/32) ##Factor para mantener la fuente dentro del área del botón
     BUTTON_X = RESOLUTION[0]/5333 ##Factor para mantener las proporciones del botón sin importar la resolución
 
-    ##-- Config
     tema = None
     user = None
 
@@ -26,7 +24,7 @@ class Window:
         2: "assets/images/backgrounds/theme_2.png",
     }
 
-    ##-- Recursos
+    ## Recursos
     icon = pygame.image.load("assets/images/ui/logo.png")
     menu_background = pygame.image.load(THEMES[0])
     menu_image = pygame.transform.scale(menu_background, RESOLUTION)
@@ -47,7 +45,6 @@ class Window:
         self.next_window = ventana_clase
         self.running = False
         pygame.event.clear()
-
 
     def handle_events(self):
         for event in pygame.event.get():

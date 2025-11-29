@@ -1,65 +1,122 @@
 import pygame
-from src import Button
 from src.window import Window
-from database import GrupoCajetaDB
+from src.menu_base import BaseMenu
+
 
 pygame.init()
-
 
 class MainMenu(Window):
     def __init__(self):
         super().__init__()
-        print(self.user)
-
         pygame.display.set_caption("MENÚ PRINCIPAL")
-
-        self.center_x = self.RESOLUTION[0] / 2
+        self.menu = BaseMenu(self)
         self.alt_font = pygame.font.SysFont("High tower text", 40)
+
+        ### Configurar posiciones
+        center_x = self.RESOLUTION[0] / 2
+        start_y = self.RESOLUTION[1] / 1.5
+        spacing = 120
+
+        left_x = center_x - 150
+        right_x = center_x + 150
+
+        ### Agregar botones con BaseMenu
+        self.menu.añadir_boton("start", left_x, start_y, "Iniciar Juego")
+        self.menu.añadir_boton("options", right_x, start_y, "Opciones")
+        self.menu.añadir_boton("fame", left_x, start_y + spacing, "Salón de la Fama")
+        self.menu.añadir_boton("exit", right_x, start_y + spacing, "Salir")
+
+        ### Texto de bienvenida
+        self.welcome_text = self.alt_font.render(f"Bienvenido: {self.user}", True, (206, 143, 31))
+        self.rect_welcome = self.welcome_text.get_rect(midtop=(self.RESOLUTION[0] / 2, 35))
+
+        ### Botón de ayuda
+        from src import Button
+        self.help_btn = Button.Button(
+            self.RESOLUTION[0] / 1.1, 
+            self.RESOLUTION[1] / 1.05, 
+            self.menu_button, 
+            self.screen, 
+            0.07
+        )
+        self.label_help = self.font.render("?", 1, (206, 143, 31))
+        self.help_rect = self.label_help.get_rect(center=(self.help_btn.rect.centerx, self.help_btn.rect.centery))
         
-        start_y = self.RESOLUTION[1] / 2.35  # Primer botón (como tenías)
-        spacing = 120                        # Espaciado entre botones (ajústalo a gusto)
+        self.menu.buttons.append({
+            "name": "help",
+            "button": self.help_btn,
+            "label": self.label_help,
+            "label_rect": self.help_rect
+        })
 
-        self.start_button = Button.Button(self.center_x, start_y, self.menu_button, self.screen, self.BUTTON_X)
-        self.label_start = self.font.render("Iniciar Juego", True, (206, 143, 31))
-        self.start_rect = self.label_start.get_rect(center=self.start_button.rect.center)
+        ### Control UDP
+        try:
+            self.control = self.control
+        except:
+            from src.cliente import ControladorUDP
+            self.control = ControladorUDP("192.168.0.107")
 
-        self.options_button = Button.Button(self.center_x, start_y + spacing, self.menu_button, self.screen, self.BUTTON_X)
-        self.label_options = self.font.render("Opciones", True, (206, 143, 31))
-        self.options_rect = self.label_options.get_rect(center=self.options_button.rect.center)
-
-        self.fame_button = Button.Button(self.center_x, start_y + spacing * 2, self.menu_button, self.screen, self.BUTTON_X)
-        self.label_fame = self.font.render("Salón de la Fama", True, (206, 143, 31))
-        self.fame_rect = self.label_fame.get_rect(center=self.fame_button.rect.center)
-
-        self.exit_button = Button.Button(self.center_x, start_y + spacing * 3, self.menu_button, self.screen, self.BUTTON_X)
-        self.label_exit = self.font.render("Salir", True, (206, 143, 31))
-        self.exit_rect = self.label_exit.get_rect(center=self.exit_button.rect.center)
-
-
-        self.welcome_text = self.alt_font.render(f"Bienvenido: {self.user}", 1, (206,143,31))
-        self.rect_welcome = self.welcome_text.get_rect(midtop=(self.RESOLUTION[0] / 2, 35))                                 
-                                             
-    def render(self):
+# -----------------------------------------------------------------------------------
+#  Confirmar click en botones
+# -----------------------------------------------------------------------------------
+    def confirmar(self, nombre):
         from options_menu import OptionsMenu
         from fama import SalonFama
         from lvl1 import Level1
+        from instrucciones import Instrucciones
+
+        if nombre == "start":
+            self.cambiar_ventana(Level1)
+        elif nombre == "options":
+            self.cambiar_ventana(OptionsMenu)
+        elif nombre == "fame":
+            self.cambiar_ventana(SalonFama)
+        elif nombre == "exit":
+            self.running = False
+        elif nombre == "help":
+            self.cambiar_ventana(Instrucciones)
+
+# -----------------------------------------------------------------------------------
+# Handle events desde MenuBase
+# -----------------------------------------------------------------------------------
+    def handle_events(self):
+        for event in pygame.event.get():
+
+            if event.type == pygame.QUIT:
+                self.running = False
+
+            elif event.type == pygame.KEYDOWN:
+                self.menu.handle_keyboard(event.key)
+
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                self.menu.handle_mouse(event.pos)
+
+        comando = self.control.obtener_evento()
+        if comando:
+            self.menu.handle_udp(comando)
+
+# -----------------------------------------------------------------------------------
+# Render
+# -----------------------------------------------------------------------------------
+    def render(self):
         self.screen.blit(self.menu_image, (0, 0))
 
-        if self.start_button.draw():
-            self.cambiar_ventana(Level1)
-        if self.fame_button.draw():
-            self.cambiar_ventana(SalonFama)
-        if self.options_button.draw():
-            self.cambiar_ventana(OptionsMenu)
-        if self.exit_button.draw():
-            self.running = False
+        ### Renderizar botones usando BaseMenu
+        for i, item in enumerate(self.menu.buttons):
+            button = item["button"]
+            label = item["label"]
+            label_rect = item["label_rect"]
 
-        self.screen.blit(self.label_start, self.start_rect)
-        self.screen.blit(self.label_options, self.options_rect)
-        self.screen.blit(self.label_exit, self.exit_rect)
-        self.screen.blit(self.label_fame, self.fame_rect)
+            button.draw()
+
+            ### Borde en boton seleccionado
+            if i == self.menu.selected_index:
+                pygame.draw.rect(self.screen, (255, 215, 0), button.rect, 5)
+
+            label_rect.center = button.rect.center
+            self.screen.blit(label, label_rect)
+
         self.screen.blit(self.welcome_text, self.rect_welcome)
 
-
-
         pygame.display.flip()
+
