@@ -9,19 +9,18 @@ from src.monedas import MonedasManager
 from src.cliente import ControladorUDP
 
 
-class Level1(Window):
+class Level3(Window):
     def __init__(self):
         super().__init__()
         self.tablero = Tablero(self.RESOLUTION)
         self.clock = pygame.time.Clock()
         self.monedas = 0
-        self.avatars = AvatarsManager(self.tablero, spawn_interval=10, max_avatars=10, level=self)
+        self.avatars = AvatarsManager(self.tablero, spawn_interval=4, max_avatars=16, level=self)
         self.monedas_coleccionables = MonedasManager(self.tablero, spawn_interval=5)
         self.db = GrupoCajetaDB()
         self.db.conectar()
         self.inicio_tiempo = None
-        Window.tiempo_inicio_global = None
-        self.titulo = self.font.render("Nivel 1", True, (206, 143, 31))
+        self.titulo = self.font.render("Nivel 3", True, (206, 143, 31))
 
         ### Control para recibir datos desde cliente.py
         self.control = ControladorUDP()
@@ -299,7 +298,8 @@ class Level1(Window):
             getattr(self.avatars, "avatars_spawneados", 0) >= getattr(self.avatars, "max_avatars", 10)
             and len(getattr(self.avatars, "avatars", [])) == 0
         ):
-            self.finalizar_nivel()
+            print("Nivel completado.")
+            self.finalizar_partida_win()
 
     def run(self):
         self.inicio_tiempo = time.time()
@@ -321,20 +321,32 @@ class Level1(Window):
 
 # -------------------------------
 # Finalizar
- # -------------------------------
-    def finalizar_nivel(self):
-        from lvl2 import Level2
-        from src.transicion_nivel import TransitionWindow
+# -------------------------------
+    def finalizar_partida_win(self):
+        ### Tiempo total global desde que inició el juego
+        duracion = time.time() - Window.tiempo_inicio_global
 
-        self.running = False
+        minutos_extra = max(0, duracion - 55) / 5
+        penalizacion = int(minutos_extra) * 100
+        puntaje = max(0, 5000 - penalizacion)
 
-        trans = TransitionWindow(
-            texto="Nivel 1 completado. Preparando Nivel 2...",
-            duracion=3,
-            siguiente_clase=Level2
-        )
-        trans.run()
+        print(f"Duración: {duracion:.2f}s")
+        print(f"Puntaje final: {puntaje}")
+
+        ### Guardar puntaje
+        try:
+            self.db.guardar_puntaje(self.user, puntaje, duracion)
+        except Exception as e:
+            print("Error al guardar puntaje:", e)
+        finally:
+            self.db.cerrar()
+
+        ### Cambiar ventana
+        from fama import SalonFama
+        self.cambiar_ventana(SalonFama)
 
     def finalizar_partida_derrota(self):
         from menu_derrota import DefeatWindow
         self.cambiar_ventana(DefeatWindow)
+
+

@@ -11,6 +11,8 @@ class Window:
 
     tema = None
     user = None
+    tiempo_total = 0
+    tiempo_inicio_global = None
 
     GAME_THEMES = {
         0: "assets/images/backgrounds/game_theme0.png",
@@ -50,6 +52,8 @@ class Window:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
+                self.next_window = None 
+
         
     def actualizar_tema(self, nuevo_tema=None):
         if nuevo_tema is not None:
@@ -68,9 +72,14 @@ class Window:
         pygame.display.flip()
 
     def run(self):
+        clock = pygame.time.Clock()
+        
         while self.running:
             self.handle_events()
             self.render()
+            clock.tick(60)
+        
+        pygame.event.clear()
         
         if self.next_window:
             nueva_ventana = self.next_window()

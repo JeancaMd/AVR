@@ -16,21 +16,21 @@ class AvatarsInstrucciones(Window):
         self.texto3 = self.font.render("Level 3: 16 en total. Aparece 1 avatar cada 4 segundos", True, (255,255,255))
         self.menu = BaseMenu(self)
 
-        self.help_btn = Button.Button(
+        self.back_btn = Button.Button(
             self.RESOLUTION[0] / 1.1, 
             self.RESOLUTION[1] / 1.05, 
             self.menu_button, 
             self.screen, 
             0.07
         )
-        self.label_help = self.font.render("Volver", 1, (206, 143, 31))
-        self.help_rect = self.label_help.get_rect(center=(self.help_btn.rect.centerx, self.help_btn.rect.centery))
+        self.label_back = self.font.render("Volver", 1, (206, 143, 31))
+        self.back_rect = self.label_back.get_rect(center=(self.back_btn.rect.centerx, self.back_btn.rect.centery))
 
         self.menu.buttons.append({
             "name": "volver",
-            "button": self.help_btn,
-            "label": self.label_help,
-            "label_rect": self.help_rect
+            "button": self.back_btn,
+            "label": self.label_back,
+            "label_rect": self.back_rect
         })
 
         ### Control UDP
@@ -38,7 +38,7 @@ class AvatarsInstrucciones(Window):
             self.control = self.control
         except:
             from src.cliente import ControladorUDP
-            self.control = ControladorUDP("192.168.0.107")
+            self.control = ControladorUDP()
 
         self.images_paths = [
             "assets/images/ui/avatar_flechador_move_1.png",
@@ -63,7 +63,6 @@ class AvatarsInstrucciones(Window):
 
     def confirmar(self, nombre):
         if nombre == "volver":
-            from instrucciones import Instrucciones
             self.cambiar_ventana(Instrucciones)
 
     def handle_events(self):

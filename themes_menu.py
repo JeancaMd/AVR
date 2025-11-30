@@ -33,7 +33,7 @@ class ThemesMenu(Window):
             self.control = self.control
         except:
             from src.cliente import ControladorUDP
-            self.control = ControladorUDP("192.168.0.107")
+            self.control = ControladorUDP()
             
 
 # -----------------------------------------------------------------------------------
