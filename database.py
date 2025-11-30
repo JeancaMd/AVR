@@ -162,7 +162,3 @@ class GrupoCajetaDB:
             self.connection.close()
         print("Conexión cerrada")
 
-
-# db = GrupoCajetaDB()
-# db.conectar()
-# db.limpiar_tabla()

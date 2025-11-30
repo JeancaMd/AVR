@@ -9,19 +9,18 @@ from src.monedas import MonedasManager
 from src.cliente import ControladorUDP
 
 
-class Level1(Window):
+class Level2(Window):
     def __init__(self):
         super().__init__()
         self.tablero = Tablero(self.RESOLUTION)
         self.clock = pygame.time.Clock()
         self.monedas = 0
-        self.avatars = AvatarsManager(self.tablero, spawn_interval=10, max_avatars=10, level=self)
+        self.avatars = AvatarsManager(self.tablero, spawn_interval=7, max_avatars=13, level=self)
         self.monedas_coleccionables = MonedasManager(self.tablero, spawn_interval=5)
         self.db = GrupoCajetaDB()
         self.db.conectar()
         self.inicio_tiempo = None
-        Window.tiempo_inicio_global = None
-        self.titulo = self.font.render("Nivel 1", True, (206, 143, 31))
+        self.titulo = self.font.render("Nivel 2", True, (206, 143, 31))
 
         ### Control para recibir datos desde cliente.py
         self.control = ControladorUDP()
@@ -250,6 +249,7 @@ class Level1(Window):
         self.screen.blit(self.cant_monedas, (40, 20))
         self.screen.blit(self.titulo, (self.RESOLUTION[0]//2.25, 30))
 
+
         tiempo_actual = time.time() - Window.tiempo_inicio_global
         timer_text = self.font.render(f"{tiempo_actual:0.1f}s", True, (255, 255, 255))
         timer_rect = timer_text.get_rect(topright=(self.RESOLUTION[0] - 30, 30))
@@ -294,7 +294,7 @@ class Level1(Window):
         self.monedas_coleccionables.update()
         self.tablero.limpiar_rooks_muertos()
         
-        # Verificar fin de nivel
+        ### Verificar fin de nivel
         if (
             getattr(self.avatars, "avatars_spawneados", 0) >= getattr(self.avatars, "max_avatars", 10)
             and len(getattr(self.avatars, "avatars", [])) == 0
@@ -310,7 +310,7 @@ class Level1(Window):
                 self.handle_udp(comando)
             
             self.handle_events()
-            self.update()  # Tu lógica específica
+            self.update()
             self.render()
             self.clock.tick(60)
         
@@ -323,18 +323,20 @@ class Level1(Window):
 # Finalizar
  # -------------------------------
     def finalizar_nivel(self):
-        from lvl2 import Level2
+        from lvl3 import Level3
         from src.transicion_nivel import TransitionWindow
 
         self.running = False
 
         trans = TransitionWindow(
-            texto="Nivel 1 completado. Preparando Nivel 2...",
+            texto="Nivel 2 completado. Preparando Nivel 3...",
             duracion=3,
-            siguiente_clase=Level2
+            siguiente_clase=Level3
         )
         trans.run()
 
     def finalizar_partida_derrota(self):
         from menu_derrota import DefeatWindow
         self.cambiar_ventana(DefeatWindow)
+
+

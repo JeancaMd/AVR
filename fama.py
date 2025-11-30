@@ -2,6 +2,8 @@ import pygame
 from database import GrupoCajetaDB
 from src.window import Window
 from src import Button
+from src.menu_base import BaseMenu
+from start_menu import MainMenu
 
 pygame.init()
 
@@ -13,34 +15,65 @@ class SalonFama(Window):
         ### Cargar puntajes desde la base de datos
         self.tiempos = self.db.obtener_mejores_tiempos(limite=5)
         self.db.cerrar()
-        
+        self.menu = BaseMenu(self)
         self.center_x = self.RESOLUTION[0] // 2
-        
+
+
         ### Fuente para los textos
         self.title_font = pygame.font.SysFont("High Tower Text", 60, bold=True)
         self.score_font = pygame.font.SysFont("High Tower Text", 40)
         self.info_font = pygame.font.SysFont("High Tower Text", 28)
         
-        boton_ancho = pygame.transform.scale(
+        self.back_btn = Button.Button(
+            self.RESOLUTION[0] / 1.1, 
+            self.RESOLUTION[1] / 1.05, 
             self.menu_button, 
-            (int(self.menu_button.get_width() * 1.5), self.menu_button.get_height())  # 40% más ancho
+            self.screen, 
+            0.07
         )
-        
-        self.back_button = Button.Button(
-            self.center_x,
-            self.RESOLUTION[1] * 0.88,
-            boton_ancho,
-            self.screen,
-            self.BUTTON_X
-        )
-        
-        self.back_font = pygame.font.SysFont("High Tower Text", 28)
-        self.back_label = self.back_font.render("Volver al menú principal", True, (206, 143, 31))
-        self.back_rect = self.back_label.get_rect(center=self.back_button.rect.center)
-        
+        self.label_back = self.font.render("Volver", 1, (206, 143, 31))
+        self.back_rect = self.label_back.get_rect(center=(self.back_btn.rect.centerx, self.back_btn.rect.centery))
+
+        self.menu.buttons.append({
+            "name": "volver",
+            "button": self.back_btn,
+            "label": self.label_back,
+            "label_rect": self.back_rect
+        })
+
+        ### Control UDP
+        try:
+            self.control = self.control
+        except:
+            from src.cliente import ControladorUDP
+            self.control = ControladorUDP()   
+
         self.title = self.title_font.render("SALÓN DE LA FAMA", True, (255, 215, 0))
         self.title_rect = self.title.get_rect(center=(self.center_x, self.RESOLUTION[1] * 0.15))
     
+    def confirmar(self, nombre):
+        if nombre == "volver":
+            self.cambiar_ventana(MainMenu)
+
+    def handle_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                   self.cambiar_ventana(MainMenu)
+                else:
+                    self.menu.handle_keyboard(event.key)
+
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                self.menu.handle_mouse(event.pos)
+
+        comando = self.control.obtener_evento()
+        if comando:
+            self.menu.handle_udp(comando)
+
+
     def formatear_tiempo(self, segundos):
         ### Convierte segundos a formato MM:SS
         if not isinstance(segundos, (int, float)) or segundos < 0:
@@ -78,23 +111,11 @@ class SalonFama(Window):
         except Exception as e:
             print(f"Error cargando datos del salón de la fama: {e}")
             return []
-    
-    def handle_events(self):
-        ### Maneja los eventos de la pantalla
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False
-                self.next_window = None
-            
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if self.back_button.rect.collidepoint(event.pos):
-                    from start_menu import MainMenu
-                    self.running = False
-                    MainMenu().run()
-    
+
+
     def render(self):
         ### Dibuja la pantalla del salón de la fama
-        self.screen.blit(self.menu_image, (0, 0))
+        self.screen.blit(self.game_image, (0, 0))
         
         ### Título
         self.screen.blit(self.title, self.title_rect)
@@ -115,12 +136,20 @@ class SalonFama(Window):
             rect = mensaje.get_rect(center=(self.center_x, self.RESOLUTION[1] * 0.5))
             self.screen.blit(mensaje, rect)
 
-        ### Dibujar botón y detectar clic de manera consistente
-        if self.back_button.draw():  ### Esto detecta el hover y click
-            from start_menu import MainMenu
-            self.running = False
-            MainMenu().run()
+        for i, item in enumerate(self.menu.buttons):
+            button = item["button"]
+            label = item["label"]
+            label_rect = item["label_rect"]
+
+            button.draw()
+
+        ### Borde dorado del boton
+        if i == self.menu.selected_index:
+            pygame.draw.rect(self.screen, (255, 215, 0), button.rect, 5)
+
+        ### Dibujar texto
+        label_rect.center = button.rect.center
+        self.screen.blit(label, label_rect)
         
-        self.screen.blit(self.back_label, self.back_rect)
         
         pygame.display.flip()

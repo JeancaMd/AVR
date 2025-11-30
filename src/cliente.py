@@ -1,12 +1,12 @@
 import socket
 
 class ControladorUDP:
-    def __init__(self, pico_ip="192.168.0.105", pico_port=5000, timeout=0.02):
+    def __init__(self, pico_ip="192.168.0.100", pico_port=5000, timeout=0.02):
         self.pico_addr = (pico_ip, pico_port)
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.settimeout(timeout)
         try:
-            self.sock.sendto(b"hola_pico", self.pico_addr)
+            self.sock.sendto(b"Cliente conectado", self.pico_addr)
         except Exception as e:
             print("ControladorUDP: error enviando registro:", e)
         ### Evitar multiples clicks

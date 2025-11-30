@@ -146,11 +146,10 @@ class Avatar:
                 self.rect.y -= tamaño_celda
                 self.tiempo_ultimo_movimiento = tiempo
                 self.total_casillas += 1
-                print(self.total_casillas)
 
                 if self.total_casillas >= 10:
                     time.sleep(1)
-                    self.level.finalizar_partida()
+                    self.level.finalizar_partida_derrota()
                     return False
 
         return False
