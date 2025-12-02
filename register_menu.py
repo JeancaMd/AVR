@@ -1,5 +1,6 @@
 import pygame, pygame_gui
 from src.window import Window
+from src import Button
 import re
 
 pygame.init()
@@ -7,11 +8,8 @@ pygame.init()
 class MenuRegistro(Window):
     def __init__(self):
         super().__init__()
-        
-        # Configurar título de la ventana
-        pygame.display.set_caption("Registro - Grupo Cajeta")
+        pygame.display.set_caption("Menú de registro")
 
-        from src import Button
 
         self.clock = pygame.time.Clock()
         self.manager = pygame_gui.UIManager(self.RESOLUTION)
@@ -19,14 +17,13 @@ class MenuRegistro(Window):
         self.s = pygame.Surface(self.RESOLUTION) ##Fondo negro para el label
         self.s.set_alpha(110) ##Transparencia del fondo
 
-        # Paleta de colores dorado/café (misma que en login)
         self.DORADO = (206, 143, 31)      # Color dorado original
         self.DORADO_OSCURO = (160, 110, 20)  # Dorado más oscuro
         self.CAFE = (101, 67, 33)         # Color café madera
         self.CAFE_CLARO = (120, 80, 40)   # Café más claro
         self.BEIGE = (222, 184, 135)      # Beige para fondos
         self.BLANCO = (255, 255, 255)     # Blanco puro
-        self.GRIS_SUAVE = (80, 80, 80)    # Gris suave para placeholders
+        self.GRIS_SUAVE = (150, 150, 150)    # Gris suave para placeholders
 
         # Estados de los campos de entrada
         self.username_activo = False
@@ -38,7 +35,15 @@ class MenuRegistro(Window):
         self.email_text = ""
         self.password_text = ""
 
-        ##-- Rectángulos para los campos de entrada (sin pygame_gui)
+        self.mostrar_password = False
+
+        # Variables para controlar el borrado continuo
+        self.backspace_pressed = False
+        self.backspace_initial_delay = 500  # Milisegundos antes del borrado continuo
+        self.backspace_repeat_delay = 50    # Milisegundos entre borrados continuos
+        self.backspace_timer = 0
+
+        ## Rectángulos para los campos de entrada
         username_y = self.RESOLUTION[1] / 2.5
         self.username_rect = pygame.Rect(self.RESOLUTION[0]/2 - 200, username_y + 50, 400, 50)
        
@@ -48,13 +53,20 @@ class MenuRegistro(Window):
         password_y = email_y + 80
         self.password_rect = pygame.Rect(self.RESOLUTION[0]/2 - 200, password_y + 70, 400, 50)
 
-        ##-- Boton de aceptar
+        self.password_toggle_rect = pygame.Rect(
+            self.password_rect.right + 30,
+            self.password_rect.y,
+            110,
+            self.password_rect.height
+        )
+
+        ## Boton de aceptar
         button_y = password_y + 200
         self.accept_button = Button.Button(self.RESOLUTION[0] / 2, button_y, self.menu_button, self.screen, 0.15)
         self.label_accept = self.font.render("Registrarse", 1, self.DORADO)
         self.accept_rect = self.label_accept.get_rect(center=(self.accept_button.rect.centerx, self.accept_button.rect.centery))
 
-        ##-- Boton de volver
+        ## Boton de volver
         self.back_buttonx = Button.Button(self.RESOLUTION[0]/12, self.RESOLUTION[1]/1.05, self.back_button, self.screen, 0.07)
 
     def dibujar_caja_entrada(self, rect, texto, activo, etiqueta, texto_placeholder="Escribe aquí..."):
@@ -62,7 +74,7 @@ class MenuRegistro(Window):
         etiqueta_surf = self.font.render(etiqueta, True, self.DORADO)
         self.screen.blit(etiqueta_surf, (rect.x, rect.y - 30))
         
-        # Fondo del campo (café madera)
+        # Fondo del campo
         pygame.draw.rect(self.screen, self.CAFE, rect, border_radius=8)
         
         # Borde (dorado cuando está activo, café claro cuando no)
@@ -79,6 +91,17 @@ class MenuRegistro(Window):
             texto_surf = self.font.render(texto_mostrar, True, color_texto)
         
         self.screen.blit(texto_surf, (rect.x + 10, rect.y + (rect.height - texto_surf.get_height()) // 2))
+
+    def dibujar_boton_password(self):
+        # Dibujar el botón de mostrar/ocultar contraseña
+        pygame.draw.rect(self.screen, self.CAFE_CLARO, self.password_toggle_rect, border_radius=5)
+        pygame.draw.rect(self.screen, self.DORADO, self.password_toggle_rect, 2, border_radius=5)
+        
+        # Texto del botón
+        texto_boton = "Mostrar" if not self.mostrar_password else "Ocultar"
+        texto_surf = self.font.render(texto_boton, True, self.BLANCO)
+        texto_rect = texto_surf.get_rect(center=self.password_toggle_rect.center)
+        self.screen.blit(texto_surf, texto_rect)
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -100,6 +123,9 @@ class MenuRegistro(Window):
                     self.password_activo = True
                     self.username_activo = False
                     self.email_activo = False
+                # Verificar clic en el botón de mostrar/ocultar contraseña
+                elif self.password_toggle_rect.collidepoint(event.pos):
+                    self.mostrar_password = not self.mostrar_password
                 else:
                     self.username_activo = False
                     self.email_activo = False
@@ -122,18 +148,24 @@ class MenuRegistro(Window):
                 if self.username_activo:
                     if event.key == pygame.K_BACKSPACE:
                         self.username_text = self.username_text[:-1]
+                        self.backspace_pressed = True
+                        self.backspace_timer = pygame.time.get_ticks() + self.backspace_initial_delay
                     else:
                         self.username_text += event.unicode
                 
                 elif self.email_activo:
                     if event.key == pygame.K_BACKSPACE:
                         self.email_text = self.email_text[:-1]
+                        self.backspace_pressed = True
+                        self.backspace_timer = pygame.time.get_ticks() + self.backspace_initial_delay
                     else:
                         self.email_text += event.unicode
                 
                 elif self.password_activo:
                     if event.key == pygame.K_BACKSPACE:
                         self.password_text = self.password_text[:-1]
+                        self.backspace_pressed = True
+                        self.backspace_timer = pygame.time.get_ticks() + self.backspace_initial_delay
                     else:
                         self.password_text += event.unicode
                 
@@ -142,13 +174,28 @@ class MenuRegistro(Window):
                     from start_menu import MainMenu
                     if self.verificar_datos(self.username_text, self.email_text, self.password_text):
                         self.cambiar_ventana(MainMenu)
+            
+            # Detectar cuando se suelta la tecla de borrado
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_BACKSPACE:
+                    self.backspace_pressed = False
 
-            # PROCESAR EVENTOS DE PYGAME_GUI (IMPORTANTE)
             self.manager.process_events(event)
-
+        
+        # Lógica para borrado continuo 
+        current_time = pygame.time.get_ticks()
+        if self.backspace_pressed and current_time >= self.backspace_timer:
+            if self.username_activo and self.username_text:
+                self.username_text = self.username_text[:-1]
+                self.backspace_timer = current_time + self.backspace_repeat_delay
+            elif self.email_activo and self.email_text:
+                self.email_text = self.email_text[:-1]
+                self.backspace_timer = current_time + self.backspace_repeat_delay
+            elif self.password_activo and self.password_text:
+                self.password_text = self.password_text[:-1]
+                self.backspace_timer = current_time + self.backspace_repeat_delay
 
     def mostrar_error(self, mensaje_error):
-        # Limpiar cualquier ventana de error anterior
         for window in self.manager.get_root_container().elements:
             if hasattr(window, 'window_title') and window.window_title == "Error":
                 window.kill()
@@ -162,7 +209,6 @@ class MenuRegistro(Window):
             object_id="#error_window"
         )
         
-        # Asegurarse de que la ventana esté enfocada
         error_window.focus()
 
     def validar_username(self, username):
@@ -179,8 +225,15 @@ class MenuRegistro(Window):
             return False, "Debe ingresar un correo"
         
         patron_email = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        
         if not re.match(patron_email, email):
-            return False, "Formato de correo inválido"
+            return False, "Formato de correo inválido. Ejemplo: usuario@dominio.com"
+        
+        # Validación adicional razonable
+        local_part, domain = email.split('@')
+        
+        if len(domain) < 4:  # Dominios muy cortos como "b.c" (3 caracteres)
+            return False, "El dominio del correo parece inválido"
         
         return True, ""
 
@@ -212,22 +265,30 @@ class MenuRegistro(Window):
         
         return True, ""
 
-
     def verificar_datos(self, username, email, password):
         from database import GrupoCajetaDB
 
-        if not username or not email or not password:
-            self.mostrar_error('Debe ingresar todos los datos')
+        # Validar username
+        valido, mensaje = self.validar_username(username)
+        if not valido:
+            self.mostrar_error(mensaje)
             return False
-        if '@' not in email or '.' not in email:
-            self.mostrar_error('Ingrese un correo válido')
+
+        # Validar email
+        valido, mensaje = self.validar_email(email)
+        if not valido:
+            self.mostrar_error(mensaje)
             return False
-        if len(password) < 6:
-            self.mostrar_error('La contraseña debe ser mayor a 6 carácteres')
+
+        # Validar contraseña
+        valido, mensaje = self.validar_contraseña(password)
+        if not valido:
+            self.mostrar_error(mensaje)
             return False
-        
+
+        # Si las tres validaciones son correctas, conecta con la base de datos
         db = GrupoCajetaDB()
-        try: 
+        try:
             if not db.conectar():
                 self.mostrar_error('Error de conexión a la base de datos')
                 return False
@@ -238,13 +299,14 @@ class MenuRegistro(Window):
             else:
                 self.mostrar_error('El username o email ya está registrado')
                 return False
-            
+
         except Exception as e:
             print("Error:", e)
             self.mostrar_error('Error al verificar datos')
             return False
         finally:
             db.cerrar()
+
 
 
     def render(self):
@@ -264,12 +326,16 @@ class MenuRegistro(Window):
             self.email_rect, 
             self.email_text, 
             self.email_activo, 
-            "Correo:",
+            "Correo electrónico:",
             "ejemplo@correo.com"
         )
         
-        # Para la contraseña, mostrar asteriscos
-        password_display = "*" * len(self.password_text) if self.password_text else ""
+        # Para la contraseña, mostrar asteriscos o texto según el estado
+        if self.mostrar_password:
+            password_display = self.password_text
+        else:
+            password_display = "*" * len(self.password_text) if self.password_text else ""
+            
         self.dibujar_caja_entrada(
             self.password_rect, 
             password_display, 
@@ -278,11 +344,14 @@ class MenuRegistro(Window):
             "Mínimo 6 caracteres"
         )
         
+        # Dibujar el botón de mostrar/ocultar contraseña
+        self.dibujar_boton_password()
+        
         self.accept_button.draw()
         self.back_buttonx.draw()
         self.screen.blit(self.label_accept, self.accept_rect)
     
-        # Interfaz de usuario (para ventanas de error)
+        # Interfaz de usuario 
         self.manager.draw_ui(self.screen)
         pygame.display.flip()
 
@@ -294,7 +363,7 @@ class MenuRegistro(Window):
             refresh_rate = self.clock.tick(60)
             self.handle_events()
             self.render()
-            self.manager.update(refresh_rate)  # Esto es importante para pygame_gui
+            self.manager.update(refresh_rate)
 
         if self.next_window:
             nueva_ventana = self.next_window()

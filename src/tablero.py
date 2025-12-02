@@ -25,7 +25,6 @@ class Celda:
 
         if self.rook:
             self.rook.draw(screen)
-            
 
     def handle_click(self, pos, rook_class=None):
         if self.rect.collidepoint(pos):
@@ -70,6 +69,12 @@ class Tablero:
         for fila in self.celdas:
             for celda in fila:
                 celda.draw(surface)
+
+    def draw_attacks(self, surface):
+        for fila in self.celdas:
+            for celda in fila:
+                if celda.rook:
+                    celda.rook.draw_attack(surface)
 
     def handle_click(self, pos, rook_class):
         for fila in self.celdas:

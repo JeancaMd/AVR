@@ -2,10 +2,10 @@ import pyodbc, time, bcrypt
 
 class GrupoCajetaDB:
     def __init__(self):
-        self.server = "grupocajeta01.database.windows.net"
-        self.database = "avatarsvsrooksDB"
-        self.db_username = "grupocajeta"
-        self.password = "Cajetadecoco01"
+        self.server = "grupocajeta02.database.windows.net"
+        self.database = "avr2"
+        self.db_username = "servidor2"
+        self.password = "Cajetadecoco02"
         self.driver = "{ODBC Driver 17 for SQL Server}"
         self.connection = None
         self.cursor = None
@@ -126,7 +126,7 @@ class GrupoCajetaDB:
             return False
         try:
             self.cursor.execute(
-                "INSERT INTO scores (username, puntos, duracion) VALUES (?, ?, ?)",
+                "INSERT INTO scores (username, puntos, duracion, fecha) VALUES (?, ?, ?, GETDATE())",
                 (username, puntos, duracion)
             )
             self.connection.commit()
@@ -136,29 +136,24 @@ class GrupoCajetaDB:
             print("Error al guardar puntaje:", e)
             return False
 
-    def obtener_mejores_puntajes(self, limite=5):
+
+    def obtener_mejores_tiempos(self, limite=5):
         if not self.cursor:
             print("No hay conexión a la base de datos")
             return []
         try:
             self.cursor.execute(f"""
-                SELECT TOP {limite} username, MAX(puntos) AS mejor_puntaje
+                SELECT TOP {limite} username, MIN(duracion) AS mejor_tiempo
                 FROM scores
                 GROUP BY username
-                ORDER BY mejor_puntaje DESC
+                ORDER BY mejor_tiempo ASC
             """)
             resultados = self.cursor.fetchall()
             return [(r[0], r[1]) for r in resultados]
         except pyodbc.Error as e:
-            print("Error al obtener mejores puntajes:", e)
+            print("Error al obtener mejores tiempos:", e)
             return []
 
-
-
-
-    # def limpiar_tabla(self):
-    #     self.cursor.execute("DELETE from users")
-    #     self.connection.commit()
 
     def cerrar(self):
         if self.cursor:
@@ -166,10 +161,4 @@ class GrupoCajetaDB:
         if self.connection:
             self.connection.close()
         print("Conexión cerrada")
-
-
-# db = GrupoCajetaDB()
-# db.conectar()
-# db.limpiar_tabla()
-
 

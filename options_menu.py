@@ -1,86 +1,96 @@
-import pygame, pygame_gui
+import pygame
 from src.window import Window
-from src import Button
+from src.menu_base import BaseMenu
+from src.cliente import ControladorUDP
 
-class Options(Window):
+
+class OptionsMenu(Window):
     def __init__(self):
         super().__init__()
-        self.center_x = self.RESOLUTION[0] / 2
+        self.menu = BaseMenu(self)
 
-    ##-- Botón Tema Oscuro
-        self.theme0_button = Button.Button(
-            self.center_x, 
-            self.RESOLUTION[1] / 1.6, 
-            self.menu_button, 
-            self.screen, 
-            self.BUTTON_X
-        )
-        self.label_theme0 = self.font.render("Tema 0", True, (206, 143, 31))
-        self.theme0_rect = self.label_theme0.get_rect(center=self.theme0_button.rect.center)
-                                                      
-    ##-- Botón Tema Claro
-        self.theme1_button = Button.Button(
-            self.center_x, 
-            self.RESOLUTION[1] / 1.30, 
-            self.menu_button, 
-            self.screen, 
-            self.BUTTON_X
-        )
-        self.label_theme1 = self.font.render("Tema 1", True, (206, 143, 31))
-        self.theme1_rect = self.label_theme1.get_rect(center=self.theme1_button.rect.center)
+        ### Configurar posiciones
+        center_x = self.RESOLUTION[0] / 2
+        start_y = self.RESOLUTION[1] / 1.5
+        spacing = 120
 
-    ##-- Botón Tema Navidad
-        self.theme2_button = Button.Button(
-            self.center_x, 
-            self.RESOLUTION[1] / 1.1, 
-            self.menu_button, 
-            self.screen, 
-            self.BUTTON_X
-        )
-        self.label_theme2 = self.font.render("Tema 2", True, (206, 143, 31))
-        self.theme2_rect = self.label_theme2.get_rect(center=self.theme2_button.rect.center)
+        left_x = center_x - 150
+        right_x = center_x + 150
 
-        ##-- Boton de volver
-        self.back_buttonx = Button.Button(self.RESOLUTION[0]/12, self.RESOLUTION[1]/1.05, self.back_button, self.screen, 0.07)
+        ### Agregar botones con BaseMenu
+        self.menu.añadir_boton("temas", left_x, start_y, "Temas")
+        self.menu.añadir_boton("spotify", right_x, start_y, "Spotify")
+        self.menu.añadir_boton("config2", left_x, start_y + spacing, "Configuración")
+        self.menu.añadir_boton("volver", right_x, start_y + spacing, "Volver")
 
+        self.title_text = self.font.render("OPCIONES", True, (206, 143, 31))
+        self.title_rect = self.title_text.get_rect(midtop=(self.RESOLUTION[0] / 2, 50))
 
+        ### Control UDP
+        try:
+            self.control = self.control
+        except:
+            self.control = ControladorUDP()
 
+# -----------------------------------------------------------------------------------
+#  Click confirmar en botones
+# -----------------------------------------------------------------------------------
+    def confirmar(self, nombre):
+        if nombre == "temas":
+            from themes_menu import ThemesMenu
+            self.cambiar_ventana(ThemesMenu)
+
+        elif nombre == "spotify":
+            from spotify_window import SpotifyWindow
+            self.cambiar_ventana(SpotifyWindow)
+
+        elif nombre == "config2":
+            print("Configuración 2 presionada - Sin función aún")
+
+        elif nombre == "volver":
+            from start_menu import MainMenu
+            self.cambiar_ventana(MainMenu)
+
+# -----------------------------------------------------------------------------------
+#   Handle events desde MenuBase
+# -----------------------------------------------------------------------------------
+    def handle_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    from start_menu import MainMenu
+                    self.cambiar_ventana(MainMenu)
+                else:
+                    self.menu.handle_keyboard(event.key)
+
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                self.menu.handle_mouse(event.pos)
+
+        comando = self.control.obtener_evento()
+        if comando:
+            self.menu.handle_udp(comando)
+
+# -----------------------------------------------------------------------------------
+# Render
+# -----------------------------------------------------------------------------------
     def render(self):
         self.screen.blit(self.menu_image, (0, 0))
+        self.screen.blit(self.title_text, self.title_rect)
 
-        if self.theme0_button.draw():
-            self.actualizar_tema(0)
-            self.db.actualizar_tema(self.user, self.tema)
+        for i, item in enumerate(self.menu.buttons):
+            btn = item["button"]
+            lbl = item["label"]
+            lbl_rect = item["label_rect"]
 
-        if self.theme1_button.draw():
-            self.actualizar_tema(1)
-            self.db.actualizar_tema(self.user, self.tema)
-        
-        if self.theme2_button.draw():
-            self.actualizar_tema(2)
-            self.db.actualizar_tema(self.user, self.tema)
+            btn.draw()
 
-        if self.back_buttonx.draw():
-            from start_menu import MainMenu
-            self.running = False
-            MainMenu().run()
+            if i == self.menu.selected_index:
+                pygame.draw.rect(self.screen, (255, 215, 0), btn.rect, 4)
 
-        self.screen.blit(self.label_theme1, self.theme1_rect)
-        self.screen.blit(self.label_theme0, self.theme0_rect)
-        self.screen.blit(self.label_theme2, self.theme2_rect)
+            lbl_rect.center = btn.rect.center
+            self.screen.blit(lbl, lbl_rect)
 
         pygame.display.flip()
-                
-
-    def run(self):
-        from database import GrupoCajetaDB
-        self.db = GrupoCajetaDB()
-        if not self.db.conectar():
-            self.mostrar_error("No se pudo conectar a la base de datos")
-            return
-
-        while self.running:
-            self.handle_events()
-            self.render()
-        
-        self.db.cerrar()
